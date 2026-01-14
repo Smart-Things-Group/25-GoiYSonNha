@@ -1,0 +1,90 @@
+"filename", "language", "Markdown", "JSON", "JavaScript", "HTML", "PostCSS", "XML", "JavaScript JSX", "MS SQL", "comment", "blank", "total"
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\README.md", "Markdown", 184, 0, 0, 0, 0, 0, 0, 0, 0, 54, 238
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\package-lock.json", "JSON", 0, 5088, 0, 0, 0, 0, 0, 0, 0, 1, 5089
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\package.json", "JSON", 0, 38, 0, 0, 0, 0, 0, 0, 0, 1, 39
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\app.js", "JavaScript", 0, 0, 62, 0, 0, 0, 0, 0, 15, 16, 93
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\db.js", "JavaScript", 0, 0, 77, 0, 0, 0, 0, 0, 3, 11, 91
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\activityLogger.js", "JavaScript", 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 6
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\asyncHandler.js", "JavaScript", 0, 0, 6, 0, 0, 0, 0, 0, 0, 1, 7
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\auth.js", "JavaScript", 0, 0, 39, 0, 0, 0, 0, 0, 0, 9, 48
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\error.js", "JavaScript", 0, 0, 5, 0, 0, 0, 0, 0, 0, 1, 6
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\isAdmin.js", "JavaScript", 0, 0, 11, 0, 0, 0, 0, 0, 0, 3, 14
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\respond.js", "JavaScript", 0, 0, 7, 0, 0, 0, 0, 0, 0, 3, 10
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\admin.js", "JavaScript", 0, 0, 643, 0, 0, 0, 0, 0, 68, 102, 813
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\colors.js", "JavaScript", 0, 0, 9, 0, 0, 0, 0, 0, 1, 2, 12
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\designs.js", "JavaScript", 0, 0, 25, 0, 0, 0, 0, 0, 6, 9, 40
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\histories.js", "JavaScript", 0, 0, 37, 0, 0, 0, 0, 0, 6, 11, 54
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\library.js", "JavaScript", 0, 0, 14, 0, 0, 0, 0, 0, 1, 2, 17
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\users.js", "JavaScript", 0, 0, 114, 0, 0, 0, 0, 0, 3, 22, 139
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\wizard.js", "JavaScript", 0, 0, 263, 0, 0, 0, 0, 0, 24, 33, 320
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\server.js", "JavaScript", 0, 0, 12, 0, 0, 0, 0, 0, 0, 5, 17
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\adminSeeder.js", "JavaScript", 0, 0, 45, 0, 0, 0, 0, 0, 0, 8, 53
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\aws.js", "JavaScript", 0, 0, 429, 0, 0, 0, 0, 0, 95, 66, 590
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\cloud.js", "JavaScript", 0, 0, 17, 0, 0, 0, 0, 0, 1, 4, 22
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\colorService.js", "JavaScript", 0, 0, 7, 0, 0, 0, 0, 0, 1, 2, 10
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\designService.js", "JavaScript", 0, 0, 34, 0, 0, 0, 0, 0, 3, 5, 42
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\external-ai.js", "JavaScript", 0, 0, 592, 0, 0, 0, 0, 0, 101, 108, 801
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\gemini.js", "JavaScript", 0, 0, 95, 0, 0, 0, 0, 0, 10, 15, 120
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\docs\HE_THONG_CHI_TIET.md", "Markdown", 1383, 0, 0, 0, 0, 0, 0, 0, 0, 314, 1697
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\docs\backend_mockapi\README.md", "Markdown", 30, 0, 0, 0, 0, 0, 0, 0, 0, 12, 42
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\docs\db-schema.sql", "MS SQL", 0, 0, 0, 0, 0, 0, 0, 67, 8, 10, 85
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\docs\implementation-summary.md", "Markdown", 15, 0, 0, 0, 0, 0, 0, 0, 0, 5, 20
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\.vite\deps\_metadata.json", "JSON", 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 8
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\.vite\deps\package.json", "JSON", 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 4
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\README.md", "Markdown", 7, 0, 0, 0, 0, 0, 0, 0, 0, 4, 11
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\eslint.config.js", "JavaScript", 0, 0, 28, 0, 0, 0, 0, 0, 0, 2, 30
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\index.html", "HTML", 0, 0, 0, 13, 0, 0, 0, 0, 0, 1, 14
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\package-lock.json", "JSON", 0, 3453, 0, 0, 0, 0, 0, 0, 0, 1, 3454
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\package.json", "JSON", 0, 31, 0, 0, 0, 0, 0, 0, 0, 1, 32
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\public\backgrounds\exterior-ai-hero.svg", "XML", 0, 0, 0, 0, 0, 82, 0, 0, 7, 11, 100
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\public\vite.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\App.css", "PostCSS", 0, 0, 0, 0, 140, 0, 0, 0, 0, 20, 160
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\App.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 674, 0, 1, 41, 716
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\api\admin.js", "JavaScript", 0, 0, 217, 0, 0, 0, 0, 0, 20, 36, 273
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\api\auth.js", "JavaScript", 0, 0, 43, 0, 0, 0, 0, 0, 0, 11, 54
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\api\wizard.js", "JavaScript", 0, 0, 56, 0, 0, 0, 0, 0, 3, 13, 72
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\assets\react.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\AdminDashboard.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 348, 0, 3, 19, 370
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\AdminDashboardPage.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 272, 0, 3, 18, 293
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\AdminLayout.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 101, 0, 2, 11, 114
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\AdminLibraryManager.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 403, 0, 19, 29, 451
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\AdminUserManagement.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 436, 0, 0, 31, 467
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\HistoryViewer.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 143, 0, 0, 7, 150
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\LoginPage.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 110, 0, 0, 14, 124
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\ProfilePage.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 247, 0, 0, 16, 263
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\RegisterPage.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 150, 0, 0, 17, 167
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\ResultStep.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 326, 0, 3, 28, 357
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\SelectRequirementsStep.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 184, 0, 0, 11, 195
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\ToastList.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 41, 0, 0, 7, 48
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\UploadHouseStep.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 153, 0, 0, 12, 165
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\UploadSampleStep.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 127, 0, 0, 12, 139
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\WizardNavigation.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 47, 0, 0, 2, 49
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\hooks\useAdminUsers.js", "JavaScript", 0, 0, 140, 0, 0, 0, 0, 0, 0, 14, 154
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\hooks\useHistoryManager.js", "JavaScript", 0, 0, 115, 0, 0, 0, 0, 0, 1, 14, 130
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\hooks\useToasts.js", "JavaScript", 0, 0, 32, 0, 0, 0, 0, 0, 0, 7, 39
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\hooks\useWizardFlow.js", "JavaScript", 0, 0, 387, 0, 0, 0, 0, 0, 3, 46, 436
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\index.css", "PostCSS", 0, 0, 0, 0, 1838, 0, 0, 0, 11, 291, 2140
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\main.jsx", "JavaScript JSX", 0, 0, 0, 0, 0, 0, 9, 0, 0, 2, 11
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\utils\wizard.js", "JavaScript", 0, 0, 43, 0, 0, 0, 0, 0, 0, 5, 48
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\vite.config.js", "JavaScript", 0, 0, 6, 0, 0, 0, 0, 0, 1, 2, 9
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\package-lock.json", "JSON", 0, 2220, 0, 0, 0, 0, 0, 0, 0, 1, 2221
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\package.json", "JSON", 0, 21, 0, 0, 0, 0, 0, 0, 0, 1, 22
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\testAI\package-lock.json", "JSON", 0, 6, 0, 0, 0, 0, 0, 0, 0, 1, 7
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\testAI\test-gemini.js", "JavaScript", 0, 0, 9, 0, 0, 0, 0, 0, 2, 4, 15
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\README.md", "Markdown", 74, 0, 0, 0, 0, 0, 0, 0, 0, 46, 120
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\TEST_COVERAGE.md", "Markdown", 104, 0, 0, 0, 0, 0, 0, 0, 0, 36, 140
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\package-lock.json", "JSON", 0, 2220, 0, 0, 0, 0, 0, 0, 0, 1, 2221
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\package.json", "JSON", 0, 26, 0, 0, 0, 0, 0, 0, 0, 1, 27
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\setup-test-images.md", "Markdown", 45, 0, 0, 0, 0, 0, 0, 0, 0, 31, 76
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\admin.test.js", "JavaScript", 0, 0, 162, 0, 0, 0, 0, 0, 34, 51, 247
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\auth.test.js", "JavaScript", 0, 0, 202, 0, 0, 0, 0, 0, 29, 58, 289
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\helpers.js", "JavaScript", 0, 0, 151, 0, 0, 0, 0, 0, 4, 25, 180
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\history.test.js", "JavaScript", 0, 0, 143, 0, 0, 0, 0, 0, 42, 48, 233
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\profile.test.js", "JavaScript", 0, 0, 117, 0, 0, 0, 0, 0, 22, 40, 179
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\security.test.js", "JavaScript", 0, 0, 104, 0, 0, 0, 0, 0, 31, 41, 176
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\setup.js", "JavaScript", 0, 0, 28, 0, 0, 0, 0, 0, 5, 9, 42
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\upload-house.test.js", "JavaScript", 0, 0, 86, 0, 0, 0, 0, 0, 18, 13, 117
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\wizard-ai.test.js", "JavaScript", 0, 0, 117, 0, 0, 0, 0, 0, 37, 43, 197
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\wizard-navigation.test.js", "JavaScript", 0, 0, 158, 0, 0, 0, 0, 0, 43, 51, 252
+"d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\wizard-requirements.test.js", "JavaScript", 0, 0, 118, 0, 0, 0, 0, 0, 32, 39, 189
+"Total", "-", 1842, 13114, 5009, 13, 1978, 84, 3771, 67, 723, 2133, 28734

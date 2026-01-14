@@ -1,0 +1,148 @@
+Date : 2026-01-13 15:24:21
+Directory : d:\TotNghiep_ptud\Project\NgoaiThat-AI
+Total : 88 files,  25878 codes, 723 comments, 2133 blanks, all 28734 lines
+
+Languages
++----------------+------------+------------+------------+------------+------------+
+| language       | files      | code       | comment    | blank      | total      |
++----------------+------------+------------+------------+------------+------------+
+| JSON           |         11 |     13,114 |          0 |         10 |     13,124 |
+| JavaScript     |         45 |      5,009 |        666 |      1,011 |      6,686 |
+| JavaScript JSX |         17 |      3,771 |         31 |        277 |      4,079 |
+| PostCSS        |          2 |      1,978 |         11 |        311 |      2,300 |
+| Markdown       |          8 |      1,842 |          0 |        502 |      2,344 |
+| XML            |          3 |         84 |          7 |         11 |        102 |
+| MS SQL         |          1 |         67 |          8 |         10 |         85 |
+| HTML           |          1 |         13 |          0 |          1 |         14 |
++----------------+------------+------------+------------+------------+------------+
+
+Directories
++-------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                      | files      | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                         |         88 |     25,878 |        723 |      2,133 |     28,734 |
+| . (Files)                                                                                 |          3 |      2,425 |          0 |         56 |      2,481 |
+| backend                                                                                   |         25 |      7,673 |        339 |        441 |      8,453 |
+| backend (Files)                                                                           |          2 |      5,126 |          0 |          2 |      5,128 |
+| backend\src                                                                               |         23 |      2,547 |        339 |        439 |      3,325 |
+| backend\src (Files)                                                                       |          3 |        151 |         18 |         32 |        201 |
+| backend\src\middlewares                                                                   |          6 |         72 |          1 |         18 |         91 |
+| backend\src\routes                                                                        |          7 |      1,105 |        109 |        181 |      1,395 |
+| backend\src\services                                                                      |          7 |      1,219 |        211 |        208 |      1,638 |
+| docs                                                                                      |          4 |      1,495 |          8 |        341 |      1,844 |
+| docs (Files)                                                                              |          3 |      1,465 |          8 |        329 |      1,802 |
+| docs\backend_mockapi                                                                      |          1 |         30 |          0 |         12 |         42 |
+| frontend                                                                                  |         38 |     10,415 |         77 |        757 |     11,249 |
+| frontend (Files)                                                                          |          6 |      3,538 |          1 |         11 |      3,550 |
+| frontend\.vite                                                                            |          2 |         11 |          0 |          1 |         12 |
+| frontend\.vite\deps                                                                       |          2 |         11 |          0 |          1 |         12 |
+| frontend\public                                                                           |          2 |         83 |          7 |         11 |        101 |
+| frontend\public (Files)                                                                   |          1 |          1 |          0 |          0 |          1 |
+| frontend\public\backgrounds                                                               |          1 |         82 |          7 |         11 |        100 |
+| frontend\src                                                                              |         28 |      6,783 |         69 |        734 |      7,586 |
+| frontend\src (Files)                                                                      |          4 |      2,661 |         12 |        354 |      3,027 |
+| frontend\src\api                                                                          |          3 |        316 |         23 |         60 |        399 |
+| frontend\src\assets                                                                       |          1 |          1 |          0 |          0 |          1 |
+| frontend\src\components                                                                   |         15 |      3,088 |         30 |        234 |      3,352 |
+| frontend\src\hooks                                                                        |          4 |        674 |          4 |         81 |        759 |
+| frontend\src\utils                                                                        |          1 |         43 |          0 |          5 |         48 |
+| testAI                                                                                    |          2 |         15 |          2 |          5 |         22 |
+| tests-e2e                                                                                 |         16 |      3,855 |        297 |        533 |      4,685 |
+| tests-e2e (Files)                                                                         |          5 |      2,469 |          0 |        115 |      2,584 |
+| tests-e2e\tests                                                                           |         11 |      1,386 |        297 |        418 |      2,101 |
++-------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
+| filename                                                                                  | language       | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\README.md                                          | Markdown       |        184 |          0 |         54 |        238 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\package-lock.json                          | JSON           |      5,088 |          0 |          1 |      5,089 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\package.json                               | JSON           |         38 |          0 |          1 |         39 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\app.js                                 | JavaScript     |         62 |         15 |         16 |         93 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\db.js                                  | JavaScript     |         77 |          3 |         11 |         91 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\activityLogger.js          | JavaScript     |          4 |          1 |          1 |          6 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\asyncHandler.js            | JavaScript     |          6 |          0 |          1 |          7 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\auth.js                    | JavaScript     |         39 |          0 |          9 |         48 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\error.js                   | JavaScript     |          5 |          0 |          1 |          6 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\isAdmin.js                 | JavaScript     |         11 |          0 |          3 |         14 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\middlewares\respond.js                 | JavaScript     |          7 |          0 |          3 |         10 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\admin.js                        | JavaScript     |        643 |         68 |        102 |        813 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\colors.js                       | JavaScript     |          9 |          1 |          2 |         12 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\designs.js                      | JavaScript     |         25 |          6 |          9 |         40 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\histories.js                    | JavaScript     |         37 |          6 |         11 |         54 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\library.js                      | JavaScript     |         14 |          1 |          2 |         17 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\users.js                        | JavaScript     |        114 |          3 |         22 |        139 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\routes\wizard.js                       | JavaScript     |        263 |         24 |         33 |        320 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\server.js                              | JavaScript     |         12 |          0 |          5 |         17 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\adminSeeder.js                | JavaScript     |         45 |          0 |          8 |         53 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\aws.js                        | JavaScript     |        429 |         95 |         66 |        590 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\cloud.js                      | JavaScript     |         17 |          1 |          4 |         22 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\colorService.js               | JavaScript     |          7 |          1 |          2 |         10 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\designService.js              | JavaScript     |         34 |          3 |          5 |         42 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\external-ai.js                | JavaScript     |        592 |        101 |        108 |        801 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\backend\src\services\gemini.js                     | JavaScript     |         95 |         10 |         15 |        120 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\docs\HE_THONG_CHI_TIET.md                          | Markdown       |      1,383 |          0 |        314 |      1,697 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\docs\backend_mockapi\README.md                     | Markdown       |         30 |          0 |         12 |         42 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\docs\db-schema.sql                                 | MS SQL         |         67 |          8 |         10 |         85 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\docs\implementation-summary.md                     | Markdown       |         15 |          0 |          5 |         20 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\.vite\deps\_metadata.json                 | JSON           |          8 |          0 |          0 |          8 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\.vite\deps\package.json                   | JSON           |          3 |          0 |          1 |          4 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\README.md                                 | Markdown       |          7 |          0 |          4 |         11 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\eslint.config.js                          | JavaScript     |         28 |          0 |          2 |         30 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\index.html                                | HTML           |         13 |          0 |          1 |         14 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\package-lock.json                         | JSON           |      3,453 |          0 |          1 |      3,454 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\package.json                              | JSON           |         31 |          0 |          1 |         32 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\public\backgrounds\exterior-ai-hero.svg   | XML            |         82 |          7 |         11 |        100 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\public\vite.svg                           | XML            |          1 |          0 |          0 |          1 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\App.css                               | PostCSS        |        140 |          0 |         20 |        160 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\App.jsx                               | JavaScript JSX |        674 |          1 |         41 |        716 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\api\admin.js                          | JavaScript     |        217 |         20 |         36 |        273 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\api\auth.js                           | JavaScript     |         43 |          0 |         11 |         54 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\api\wizard.js                         | JavaScript     |         56 |          3 |         13 |         72 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\assets\react.svg                      | XML            |          1 |          0 |          0 |          1 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\AdminDashboard.jsx         | JavaScript JSX |        348 |          3 |         19 |        370 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\AdminDashboardPage.jsx     | JavaScript JSX |        272 |          3 |         18 |        293 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\AdminLayout.jsx            | JavaScript JSX |        101 |          2 |         11 |        114 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\AdminLibraryManager.jsx    | JavaScript JSX |        403 |         19 |         29 |        451 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\AdminUserManagement.jsx    | JavaScript JSX |        436 |          0 |         31 |        467 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\HistoryViewer.jsx          | JavaScript JSX |        143 |          0 |          7 |        150 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\LoginPage.jsx              | JavaScript JSX |        110 |          0 |         14 |        124 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\ProfilePage.jsx            | JavaScript JSX |        247 |          0 |         16 |        263 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\RegisterPage.jsx           | JavaScript JSX |        150 |          0 |         17 |        167 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\ResultStep.jsx             | JavaScript JSX |        326 |          3 |         28 |        357 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\SelectRequirementsStep.jsx | JavaScript JSX |        184 |          0 |         11 |        195 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\ToastList.jsx              | JavaScript JSX |         41 |          0 |          7 |         48 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\UploadHouseStep.jsx        | JavaScript JSX |        153 |          0 |         12 |        165 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\UploadSampleStep.jsx       | JavaScript JSX |        127 |          0 |         12 |        139 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\components\WizardNavigation.jsx       | JavaScript JSX |         47 |          0 |          2 |         49 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\hooks\useAdminUsers.js                | JavaScript     |        140 |          0 |         14 |        154 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\hooks\useHistoryManager.js            | JavaScript     |        115 |          1 |         14 |        130 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\hooks\useToasts.js                    | JavaScript     |         32 |          0 |          7 |         39 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\hooks\useWizardFlow.js                | JavaScript     |        387 |          3 |         46 |        436 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\index.css                             | PostCSS        |      1,838 |         11 |        291 |      2,140 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\main.jsx                              | JavaScript JSX |          9 |          0 |          2 |         11 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\src\utils\wizard.js                       | JavaScript     |         43 |          0 |          5 |         48 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\frontend\vite.config.js                            | JavaScript     |          6 |          1 |          2 |          9 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\package-lock.json                                  | JSON           |      2,220 |          0 |          1 |      2,221 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\package.json                                       | JSON           |         21 |          0 |          1 |         22 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\testAI\package-lock.json                           | JSON           |          6 |          0 |          1 |          7 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\testAI\test-gemini.js                              | JavaScript     |          9 |          2 |          4 |         15 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\README.md                                | Markdown       |         74 |          0 |         46 |        120 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\TEST_COVERAGE.md                         | Markdown       |        104 |          0 |         36 |        140 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\package-lock.json                        | JSON           |      2,220 |          0 |          1 |      2,221 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\package.json                             | JSON           |         26 |          0 |          1 |         27 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\setup-test-images.md                     | Markdown       |         45 |          0 |         31 |         76 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\admin.test.js                      | JavaScript     |        162 |         34 |         51 |        247 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\auth.test.js                       | JavaScript     |        202 |         29 |         58 |        289 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\helpers.js                         | JavaScript     |        151 |          4 |         25 |        180 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\history.test.js                    | JavaScript     |        143 |         42 |         48 |        233 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\profile.test.js                    | JavaScript     |        117 |         22 |         40 |        179 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\security.test.js                   | JavaScript     |        104 |         31 |         41 |        176 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\setup.js                           | JavaScript     |         28 |          5 |          9 |         42 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\upload-house.test.js               | JavaScript     |         86 |         18 |         13 |        117 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\wizard-ai.test.js                  | JavaScript     |        117 |         37 |         43 |        197 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\wizard-navigation.test.js          | JavaScript     |        158 |         43 |         51 |        252 |
+| d:\TotNghiep_ptud\Project\NgoaiThat-AI\tests-e2e\tests\wizard-requirements.test.js        | JavaScript     |        118 |         32 |         39 |        189 |
+| Total                                                                                     |                |     25,878 |        723 |      2,133 |     28,734 |
++-------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
