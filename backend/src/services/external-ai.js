@@ -255,6 +255,13 @@ async function generateImageWithStabilityAI(prompt, options = {}) {
       throw new Error('STABILITY_AI_API_KEY chưa được cấu hình trong .env');
     }
 
+    // Truncate prompt to 2000 characters (Stability AI limit)
+    let truncatedPrompt = prompt;
+    if (prompt.length > 1900) {
+      console.log(`[Stability AI] Prompt quá dài (${prompt.length} chars), truncating to 1900`);
+      truncatedPrompt = prompt.substring(0, 1900) + '...';
+    }
+
     // Stability AI API endpoint
     const engineId = process.env.STABILITY_AI_ENGINE || 'stable-diffusion-xl-1024-v1-0';
     const url = `https://api.stability.ai/v1/generation/${engineId}/text-to-image`;
@@ -264,7 +271,7 @@ async function generateImageWithStabilityAI(prompt, options = {}) {
       {
         text_prompts: [
           {
-            text: prompt,
+            text: truncatedPrompt,
             weight: 1.0,
           },
         ],
@@ -281,6 +288,7 @@ async function generateImageWithStabilityAI(prompt, options = {}) {
           'Authorization': `Bearer ${apiKey}`,
         },
         responseType: 'json',
+        timeout: 120000, // 120 seconds timeout for image generation
       }
     );
 
@@ -419,9 +427,10 @@ async function generateImageWithHuggingFace(prompt, options = {}) {
             headers: {
               'Authorization': `Bearer ${apiKey}`,
               'Content-Type': 'application/json',
+              'Accept': 'image/png', // Hugging Face requires image/* accept header
             },
             responseType: 'arraybuffer',
-            timeout: 60000, // 60 seconds timeout
+            timeout: 120000, // 120 seconds timeout
           }
         );
 
@@ -568,107 +577,103 @@ async function generateImageExternal(prompt, options = {}) {
 }
 
 /**
- * Tạo ảnh từ nhiều services: Gemini (ưu tiên), Stability AI, Replicate, Hugging Face
+ * Tạo ảnh với fallback: Gemini ưu tiên → Stability AI fallback
  * @param {string} prompt - Prompt mô tả ảnh cần tạo
  * @param {Object} options - Các tùy chọn
- * @returns {Promise<{single: Buffer|null, stability: Buffer|null, replicate: Buffer|null, huggingface: Buffer|null}>} - Kết quả ảnh (single = Gemini nếu có)
+ * @returns {Promise<{single: Buffer|null, stability: Buffer|null, replicate: Buffer|null, huggingface: Buffer|null}>} - Kết quả ảnh
  */
 async function generateImageFromThreeServices(prompt, options = {}) {
   const results = {
-    single: null, // Gemini (ưu tiên)
+    single: null, // Kết quả chính (Gemini hoặc Stability AI)
     stability: null,
     replicate: null,
     huggingface: null,
   };
 
-  // Log trạng thái API keys (chỉ log có/không có, không log giá trị)
+  // Log trạng thái API keys
   console.log('[External AI] Kiểm tra API keys cho tạo ảnh:');
-  console.log(`  - GOOGLE_API_KEY1 (Gemini tạo ảnh): ${process.env.GOOGLE_API_KEY1 ? '✓ Có' : '✗ Thiếu'}`);
+  console.log(`  - GOOGLE_API_KEY1 (Gemini): ${process.env.GOOGLE_API_KEY1 ? '✓ Có' : '✗ Thiếu'}`);
   console.log(`  - STABILITY_AI_API_KEY: ${process.env.STABILITY_AI_API_KEY ? '✓ Có' : '✗ Thiếu'}`);
-  console.log(`  - REPLICATE_API_TOKEN: ${process.env.REPLICATE_API_TOKEN ? '✓ Có' : '✗ Thiếu'}`);
-  console.log(`  - HUGGINGFACE_API_KEY: ${process.env.HUGGINGFACE_API_KEY ? '✓ Có' : '✗ Thiếu'}`);
 
-  // Chạy song song tất cả services (Gemini ưu tiên, các service khác chạy song song)
-  const promises = [
-    // Gemini (ưu tiên vào single)
-    generateImageWithGemini(prompt, options)
-      .then(buffer => {
-        results.single = buffer;
-        console.log('[External AI] Gemini thành công');
-      })
-      .catch(error => {
-        console.log(`[External AI] Gemini không available: ${error.message}`);
-      }),
-    
-    generateImageWithStabilityAI(prompt, options)
-      .then(buffer => {
-        results.stability = buffer;
-        console.log('[External AI] Stability AI thành công');
-      })
-      .catch(error => {
-        console.log(`[External AI] Stability AI không available: ${error.message}`);
-      }),
-    
-    generateImageWithReplicate(prompt, options)
-      .then(buffer => {
-        results.replicate = buffer;
-        console.log('[External AI] Replicate thành công');
-      })
-      .catch(error => {
-        console.log(`[External AI] Replicate không available: ${error.message}`);
-      }),
-    
-    generateImageWithHuggingFace(prompt, options)
-      .then(buffer => {
-        results.huggingface = buffer;
-        console.log('[External AI] Hugging Face thành công');
-      })
-      .catch(error => {
-        console.log(`[External AI] Hugging Face không available: ${error.message}`);
-      }),
-  ];
-
-  // Đợi tất cả promises hoàn thành
-  await Promise.allSettled(promises);
-
-  // Kiểm tra xem có ít nhất 1 kết quả không
-  const hasAnyResult = results.single || results.stability || results.replicate || results.huggingface;
-  if (!hasAnyResult) {
-    // Kiểm tra các API keys có tồn tại không
-    const missingKeys = [];
-    if (!process.env.GOOGLE_API_KEY1) {
-      missingKeys.push('GOOGLE_API_KEY1 (cho tạo ảnh)');
+  // 1️⃣ Thử Gemini trước (ưu tiên)
+  if (process.env.GOOGLE_API_KEY1) {
+    try {
+      console.log('[External AI] 🎯 Thử Gemini (ưu tiên)...');
+      const buffer = await generateImageWithGemini(prompt, options);
+      results.single = buffer;
+      console.log('[External AI] ✅ Gemini thành công!');
+      return results; // Thành công → trả về ngay
+    } catch (geminiError) {
+      console.log(`[External AI] ❌ Gemini lỗi: ${geminiError.message}`);
+      console.log('[External AI] 🔄 Chuyển sang Stability AI...');
     }
-    if (!process.env.STABILITY_AI_API_KEY) {
-      missingKeys.push('STABILITY_AI_API_KEY');
-    }
-    if (!process.env.REPLICATE_API_TOKEN) {
-      missingKeys.push('REPLICATE_API_TOKEN');
-    }
-    if (!process.env.HUGGINGFACE_API_KEY) {
-      missingKeys.push('HUGGINGFACE_API_KEY');
-    }
-
-    let errorMessage = 'Tất cả services (Gemini, Stability AI, Replicate, Hugging Face) đều không available.';
-    if (missingKeys.length > 0) {
-      errorMessage += `\n\nCác API keys thiếu trong .env:\n- ${missingKeys.join('\n- ')}`;
-    } else {
-      errorMessage += '\n\nTất cả API keys đã được cấu hình nhưng các services vẫn không hoạt động. Vui lòng kiểm tra:\n';
-      errorMessage += '1. API keys có đúng không?\n';
-      errorMessage += '2. API keys có còn hạn không?\n';
-      errorMessage += '3. Có lỗi kết nối mạng không?\n';
-      errorMessage += '4. Server đã được restart sau khi thêm API keys vào .env chưa?';
-    }
-    
-    throw new Error(errorMessage);
+  } else {
+    console.log('[External AI] ⚠️ GOOGLE_API_KEY1 không có, bỏ qua Gemini');
   }
 
-  return results;
+  // 2️⃣ Fallback: Thử Stability AI
+  if (process.env.STABILITY_AI_API_KEY) {
+    try {
+      console.log('[External AI] 🎯 Thử Stability AI...');
+      const buffer = await generateImageWithStabilityAI(prompt, options);
+      results.single = buffer; // Đưa vào single để frontend dùng được
+      results.stability = buffer;
+      console.log('[External AI] ✅ Stability AI thành công!');
+      return results; // Thành công → trả về ngay
+    } catch (stabilityError) {
+      console.log(`[External AI] ❌ Stability AI lỗi: ${stabilityError.message}`);
+    }
+  } else {
+    console.log('[External AI] ⚠️ STABILITY_AI_API_KEY không có, bỏ qua Stability AI');
+  }
+
+  // 3️⃣ Fallback cuối: Thử các services khác
+  console.log('[External AI] 🔄 Thử các services còn lại...');
+  
+  // Thử Replicate
+  if (process.env.REPLICATE_API_TOKEN) {
+    try {
+      console.log('[External AI] Thử Replicate...');
+      const buffer = await generateImageWithReplicate(prompt, options);
+      results.single = buffer;
+      results.replicate = buffer;
+      console.log('[External AI] ✅ Replicate thành công!');
+      return results;
+    } catch (error) {
+      console.log(`[External AI] ❌ Replicate lỗi: ${error.message}`);
+    }
+  }
+
+  // Thử Hugging Face
+  if (process.env.HUGGINGFACE_API_KEY) {
+    try {
+      console.log('[External AI] Thử Hugging Face...');
+      const buffer = await generateImageWithHuggingFace(prompt, options);
+      results.single = buffer;
+      results.huggingface = buffer;
+      console.log('[External AI] ✅ Hugging Face thành công!');
+      return results;
+    } catch (error) {
+      console.log(`[External AI] ❌ Hugging Face lỗi: ${error.message}`);
+    }
+  }
+
+  // Không có service nào thành công
+  const missingKeys = [];
+  if (!process.env.GOOGLE_API_KEY1) missingKeys.push('GOOGLE_API_KEY1');
+  if (!process.env.STABILITY_AI_API_KEY) missingKeys.push('STABILITY_AI_API_KEY');
+
+  let errorMessage = 'Tất cả services đều không available.';
+  if (missingKeys.length > 0) {
+    errorMessage += ` Thiếu: ${missingKeys.join(', ')}`;
+  }
+  
+  throw new Error(errorMessage);
 }
 
 /**
  * Tạo ảnh từ ảnh gốc và prompt (image-to-image)
- * Ưu tiên dùng Gemini để tạo ảnh, nếu không có thì dùng external services khác
+ * Ưu tiên: Gemini → Stability AI → Other services
  * @param {Buffer} sourceImageBuffer - Buffer của ảnh gốc
  * @param {string} sourceMimeType - MIME type của ảnh gốc
  * @param {Buffer} referenceImageBuffer - Buffer của ảnh tham khảo (optional)
@@ -677,113 +682,120 @@ async function generateImageFromThreeServices(prompt, options = {}) {
  * @returns {Promise<Buffer>} - Buffer của ảnh đã tạo
  */
 async function generateImageFromImages(sourceImageBuffer, sourceMimeType, referenceImageBuffer, referenceMimeType, prompt) {
-  try {
-    // Ưu tiên thử Gemini trước (vì Gemini hỗ trợ image-to-image tốt hơn)
-    // Sử dụng GOOGLE_API_KEY1 cho tạo ảnh
+  const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+  // 1️⃣ Thử Gemini trước (ưu tiên - hỗ trợ image-to-image tốt nhất)
+  const geminiApiKey = process.env.GOOGLE_API_KEY1;
+  if (geminiApiKey) {
     try {
-      const { GoogleGenerativeAI } = require('@google/generative-ai');
-      const apiKey = process.env.GOOGLE_API_KEY1;
-      
-      if (apiKey) {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image' });
+      console.log('[Image-to-Image] 🎯 Thử Gemini (ưu tiên)...');
+      const genAI = new GoogleGenerativeAI(geminiApiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image' });
 
-        // Tạo content với ảnh gốc và prompt
-        const content = [
-          {
-            inlineData: {
-              mimeType: sourceMimeType,
-              data: sourceImageBuffer.toString('base64'),
-            },
+      const content = [
+        {
+          inlineData: {
+            mimeType: sourceMimeType,
+            data: sourceImageBuffer.toString('base64'),
           },
-          { text: prompt },
-        ];
+        },
+        { text: prompt },
+      ];
 
-        // Thêm ảnh tham khảo nếu có
-        if (referenceImageBuffer && referenceMimeType) {
-          content.unshift({
-            inlineData: {
-              mimeType: referenceMimeType,
-              data: referenceImageBuffer.toString('base64'),
-            },
-          });
-        }
-
-        const result = await model.generateContent(content);
-        const response = await result.response;
-        const parts = response.candidates?.[0]?.content?.parts || [];
-        const imagePart = parts.find((p) => p.inlineData);
-
-        if (imagePart && imagePart.inlineData) {
-          console.log('[Gemini] Tạo ảnh từ ảnh gốc thành công (dùng GOOGLE_API_KEY1)');
-          return Buffer.from(imagePart.inlineData.data, 'base64');
-        }
-      }
-    } catch (geminiError) {
-      console.log('[Fallback] Gemini không available để tạo ảnh (GOOGLE_API_KEY1), thử enhance prompt và dùng services khác');
-    }
-
-    // Fallback: Dùng Gemini để enhance prompt (dùng GOOGLE_API_KEY cho text), sau đó dùng external services
-    let enhancedPrompt = prompt;
-    try {
-      const { GoogleGenerativeAI } = require('@google/generative-ai');
-      const apiKey = process.env.GOOGLE_API_KEY; // Dùng GOOGLE_API_KEY cho enhance prompt (text)
-      
-      if (apiKey) {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-        const enhancePrompt = `
-          You are an expert in creating prompts for AI image generation. 
-          Based on the source image and the following requirements, create a detailed, specific prompt for Stable Diffusion:
-          
-          Requirements: ${prompt}
-          
-          The prompt must:
-          - Describe in detail the style, colors, materials
-          - Include technical keywords for Stable Diffusion
-          - Be about 100-200 words long
-          - Return only the prompt, no additional explanation
-        `;
-
-        const content = [
-          {
-            inlineData: {
-              mimeType: sourceMimeType,
-              data: sourceImageBuffer.toString('base64'),
-            },
+      // Thêm ảnh tham khảo nếu có
+      if (referenceImageBuffer && referenceMimeType) {
+        content.unshift({
+          inlineData: {
+            mimeType: referenceMimeType,
+            data: referenceImageBuffer.toString('base64'),
           },
-          { text: enhancePrompt },
-        ];
-
-        if (referenceImageBuffer && referenceMimeType) {
-          content.unshift({
-            inlineData: {
-              mimeType: referenceMimeType,
-              data: referenceImageBuffer.toString('base64'),
-            },
-          });
-        }
-
-        const result = await model.generateContent(content);
-        const response = await result.response;
-        enhancedPrompt = response.text().trim();
-        console.log('[Gemini] Enhanced prompt successfully');
+        });
       }
-    } catch (geminiError) {
-      console.log('[Fallback] Gemini không available để enhance prompt, sử dụng prompt gốc');
-      // Sử dụng prompt gốc nếu Gemini không available
-    }
 
-    // Tạo ảnh bằng external services (ưu tiên Gemini trong generateImageExternal)
-    return await generateImageExternal(enhancedPrompt, {
-      width: 1024,
-      height: 1024,
-    });
-  } catch (error) {
-    console.error('[Image Generation Error]', error);
-    throw error;
+      const result = await model.generateContent(content);
+      const response = await result.response;
+      const parts = response.candidates?.[0]?.content?.parts || [];
+      const imagePart = parts.find((p) => p.inlineData);
+
+      if (imagePart && imagePart.inlineData) {
+        console.log('[Image-to-Image] ✅ Gemini thành công!');
+        return Buffer.from(imagePart.inlineData.data, 'base64');
+      }
+      throw new Error('Gemini không trả về ảnh');
+    } catch (geminiError) {
+      console.log(`[Image-to-Image] ❌ Gemini lỗi: ${geminiError.message}`);
+      console.log('[Image-to-Image] 🔄 Chuyển sang Stability AI...');
+    }
   }
+
+  // 2️⃣ Fallback: Stability AI (text-to-image với enhanced prompt)
+  if (process.env.STABILITY_AI_API_KEY) {
+    try {
+      console.log('[Image-to-Image] 🎯 Thử Stability AI...');
+      
+      // Enhance prompt nếu có GOOGLE_API_KEY
+      let enhancedPrompt = prompt;
+      const textApiKey = process.env.GOOGLE_API_KEY;
+      if (textApiKey) {
+        try {
+          const genAI = new GoogleGenerativeAI(textApiKey);
+          const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+          const content = [
+            {
+              inlineData: {
+                mimeType: sourceMimeType,
+                data: sourceImageBuffer.toString('base64'),
+              },
+            },
+            { 
+              text: `Analyze this house image and create a detailed Stable Diffusion prompt to repaint it. Requirements: ${prompt}. 
+              Output only the prompt (100-200 words) with technical keywords, no explanation.` 
+            },
+          ];
+
+          const result = await model.generateContent(content);
+          enhancedPrompt = result.response.text().trim();
+          console.log('[Image-to-Image] Enhanced prompt với Gemini');
+        } catch (e) {
+          console.log('[Image-to-Image] Không thể enhance prompt, dùng prompt gốc');
+        }
+      }
+
+      const buffer = await generateImageWithStabilityAI(enhancedPrompt, { width: 1024, height: 1024 });
+      console.log('[Image-to-Image] ✅ Stability AI thành công!');
+      return buffer;
+    } catch (stabilityError) {
+      console.log(`[Image-to-Image] ❌ Stability AI lỗi: ${stabilityError.message}`);
+    }
+  }
+
+  // 3️⃣ Fallback cuối: Các services khác
+  console.log('[Image-to-Image] 🔄 Thử services còn lại...');
+  
+  // Thử Replicate
+  if (process.env.REPLICATE_API_TOKEN) {
+    try {
+      const buffer = await generateImageWithReplicate(prompt, { width: 1024, height: 1024 });
+      console.log('[Image-to-Image] ✅ Replicate thành công!');
+      return buffer;
+    } catch (e) {
+      console.log(`[Image-to-Image] ❌ Replicate lỗi: ${e.message}`);
+    }
+  }
+
+  // Thử Hugging Face
+  if (process.env.HUGGINGFACE_API_KEY) {
+    try {
+      const buffer = await generateImageWithHuggingFace(prompt, { width: 1024, height: 1024 });
+      console.log('[Image-to-Image] ✅ Hugging Face thành công!');
+      return buffer;
+    } catch (e) {
+      console.log(`[Image-to-Image] ❌ Hugging Face lỗi: ${e.message}`);
+    }
+  }
+
+  throw new Error('Tất cả services đều không available. Vui lòng kiểm tra GOOGLE_API_KEY1 hoặc STABILITY_AI_API_KEY');
 }
 
 module.exports = {

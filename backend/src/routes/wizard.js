@@ -77,7 +77,61 @@ Trả về duy nhất JSON theo cấu trúc:
 });
 
 /**
- * 2️⃣ Gửi yêu cầu phong cách — chỉ lưu lại yêu cầu (không gọi AI)
+ * Ngũ Hành - Five Elements Color System for Vietnamese Feng Shui
+ */
+const NGU_HANH_COLORS = {
+  "Kim": {
+    element: "metal",
+    nameVi: "Mệnh Kim",
+    colors: ["white", "silver", "gray", "gold", "metallic"],
+    colorDescEn: "pristine white walls, elegant silver-gray accents, warm gold trim details, sophisticated metallic finishes",
+    colorDescVi: "Trắng tinh khôi, bạc ánh kim, xám thanh lịch, vàng kim ấm áp",
+    styleHint: "Clean, refined, with metallic accents and neutral elegance"
+  },
+  "Mộc": {
+    element: "wood",
+    nameVi: "Mệnh Mộc",
+    colors: ["green", "emerald", "forest green", "olive", "sage"],
+    colorDescEn: "natural green tones, fresh emerald accents, forest green details, harmonious sage and olive shades",
+    colorDescVi: "Xanh lá tươi mát, xanh ngọc bích, xanh rừng hài hòa",
+    styleHint: "Natural, organic, with lush green tones and wooden textures"
+  },
+  "Thủy": {
+    element: "water",
+    nameVi: "Mệnh Thủy",
+    colors: ["navy blue", "dark blue", "ocean blue", "black", "deep teal"],
+    colorDescEn: "deep navy blue walls, mysterious dark accents, ocean-inspired blue tones, sophisticated black details",
+    colorDescVi: "Xanh navy sâu thẳm, đen huyền bí, xanh nước biển",
+    styleHint: "Flowing, deep, with ocean blues and sophisticated dark tones"
+  },
+  "Hỏa": {
+    element: "fire",
+    nameVi: "Mệnh Hỏa",
+    colors: ["red", "orange", "coral", "pink", "magenta", "burgundy"],
+    colorDescEn: "vibrant red accents, warm orange tones, elegant coral highlights, passionate pink and burgundy details",
+    colorDescVi: "Đỏ rực rỡ, cam ấm áp, hồng tươi tắn, tím đậm sang trọng",
+    styleHint: "Warm, passionate, with vibrant reds and energetic warm tones"
+  },
+  "Thổ": {
+    element: "earth",
+    nameVi: "Mệnh Thổ",
+    colors: ["yellow", "brown", "beige", "terracotta", "ochre", "sand"],
+    colorDescEn: "warm earthy yellow walls, rich brown accents, natural beige tones, authentic terracotta and ochre details",
+    colorDescVi: "Vàng đất ấm áp, nâu gỗ trầm, be tự nhiên, đất nung",
+    styleHint: "Grounded, stable, with warm earth tones and natural materials"
+  },
+  "Không": {
+    element: "auto",
+    nameVi: "Tự động",
+    colors: ["neutral", "balanced"],
+    colorDescEn: "harmonious neutral tones, balanced color palette suitable for the architectural style",
+    colorDescVi: "Màu sắc hài hòa, cân bằng",
+    styleHint: "AI will choose the most suitable colors based on the architectural style"
+  }
+};
+
+/**
+ * 2️⃣ Gửi yêu cầu phong cách theo Ngũ Hành
  */
 router.post("/generate-style", async (req, res) => {
   try {
@@ -87,12 +141,24 @@ router.post("/generate-style", async (req, res) => {
     }
 
     const ctx = SESS.get(tempId) || {};
-    ctx.requirements = requirements;
+    
+    // Enrich requirements with Ngũ Hành color data
+    const nguHanh = NGU_HANH_COLORS[requirements.style] || NGU_HANH_COLORS["Không"];
+    ctx.requirements = {
+      ...requirements,
+      nguHanhData: nguHanh,
+      colorPalette: requirements.colorPalette || nguHanh.colorDescVi,
+    };
+    
     SESS.set(tempId, ctx);
 
     res.json({
       ok: true,
-      message: "Đã lưu yêu cầu thiết kế thành công",
+      message: `Đã lưu yêu cầu: ${nguHanh.nameVi}`,
+      data: {
+        element: nguHanh.element,
+        colorPalette: nguHanh.colorDescVi,
+      }
     });
   } catch (err) {
     console.error("Generate-style error:", err);
@@ -132,29 +198,36 @@ router.post("/generate-final", auth, upload.single("house"), async (req, res) =>
       ? ctx.aiSummary
       : 'Không có bản phân tích chi tiết cho ảnh mẫu; hãy chỉ dựa trên ảnh nhà thô và yêu cầu phong cách.';
 
+    // Build color instructions based on Ngũ Hành
+    const nguHanhData = ctx.requirements?.nguHanhData || {};
+    const colorInstructions = nguHanhData.colorDescEn || "harmonious neutral tones";
+    const styleHint = nguHanhData.styleHint || "balanced and elegant";
+    const elementName = ctx.requirements?.style || "Auto";
+
     const finalInstructions = `
 SYSTEM INSTRUCTIONS
 
-You are an AI architecture and exterior design analyst, image restorer, and aesthetic finisher.
+You are an AI architecture and exterior paint specialist. Your task is to apply Feng Shui colors to a house.
 
-Reference analysis from the sample image (nếu có): 
+FENG SHUI ELEMENT: ${elementName} (${nguHanhData.nameVi || "Tự chọn"})
+COLOR PALETTE: ${colorInstructions}
+STYLE: ${styleHint}
+
+Reference analysis (if available): 
 ${sampleAnalysis}
 
-1. Analyze the provided images (raw construction house + sample style image if available) and extract every architectural component with location, material, and style details:
-   - Walls, columns, roof, windows, doors, balconies, decorative elements, foundation/bậc tam cấp, unique materials.
-   - Always mention where each element sits in the frame (trái/phải/chính giữa, tầng 1/tầng 2, phía trên/dưới).
-   - Tag any scaffolding, công nhân, vật liệu tạm thời; treat them as temporary construction elements, not final architecture.
+1. Analyze the house image:
+   - Identify walls, columns, roof, windows, doors, balconies, decorative elements.
+   - Note any scaffolding or construction items to be removed.
 
-2. Reconstruct the building to a fully finished state while preserving the original geometry, proportions, and camera angle:
-   - If some elements are missing or unfinished, infer the logical continuation (ví dụ: cột đối xứng, lan can kéo dài).
-   - Remove all temporary construction items (scaffolding, thang, bao xi măng…) and restore the surfaces bị che khuất.
+2. Preserve the original structure:
+   - Keep the exact same building shape, proportions, and camera angle.
+   - Remove scaffolding and construction materials, restore hidden surfaces.
 
-3. Create a segmentation mindset before recoloring:
-   - mentally assign mask IDs for walls, columns, roof, windows, doors, balconies, decorative trims, foundation, cảnh quan.
-   - Keep edges sharp, không để màu lem giữa các vùng.
-
-4. Apply materials, màu sắc, và trang trí theo phong cách người dùng yêu cầu:
-   - Style: ${ctx.requirements?.style || "Modern"}
+3. Apply Feng Shui paint colors:
+   - Main walls: Use PRIMARY colors from the specified Feng Shui palette
+   - Trim and borders: Use ACCENT colors
+   - Doors/windows: Coordinate with overall color scheme
    - Color palette: ${ctx.requirements?.colorPalette || "cream white with wooden accents"}
    - Materials & decorations cần nhấn mạnh: ${ctx.requirements?.decorItems || "wooden slats, wall lamps"}
    - Gợi ý bổ sung: ${ctx.requirements?.aiSuggestions || "prioritize natural lighting, elegant bright tones"}

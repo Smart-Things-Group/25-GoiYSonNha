@@ -231,9 +231,7 @@ export async function fetchAdminLibrary(token = "") {
     throw error;
   }
   return data;
-}
-
-// 11) Cập nhật mẫu nhà trong thư viện
+}// 11) Cập nhật mẫu nhà trong thư viện
 export async function updateLibraryItem(id, formData, token = "") {
   const response = await fetch(`${API_URL}/api/admin/library/${id}`, {
     method: "PUT",

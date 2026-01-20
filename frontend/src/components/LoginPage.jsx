@@ -1,6 +1,46 @@
 import { useState } from "react";
 
-function LoginPage({ onLogin, onSwitchMode, prefillEmail = "", notice = "" }) {
+const iconProps = {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.5,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+};
+
+function Icon({ name, size = 20 }) {
+  const props = { ...iconProps, width: size, height: size };
+  switch (name) {
+    case "sun":
+      return (
+        <svg {...props}>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+        </svg>
+      );
+    case "moon":
+      return (
+        <svg {...props}>
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+        </svg>
+      );
+    case "palette":
+      return (
+        <svg {...props}>
+          <circle cx="13.5" cy="6.5" r="0.5" fill="currentColor" />
+          <circle cx="17.5" cy="10.5" r="0.5" fill="currentColor" />
+          <circle cx="8.5" cy="7.5" r="0.5" fill="currentColor" />
+          <circle cx="6.5" cy="12.5" r="0.5" fill="currentColor" />
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c0.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2Z" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+function LoginPage({ onLogin, onSwitchMode, prefillEmail = "", notice = "", theme = "light", onToggleTheme }) {
   const [credentials, setCredentials] = useState({
     email: prefillEmail,
     password: "",
@@ -8,15 +48,13 @@ function LoginPage({ onLogin, onSwitchMode, prefillEmail = "", notice = "" }) {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleChange = (field) => (event) => {
-    setCredentials((prev) => ({ ...prev, [field]: event.target.value }));
-    if (error) {
-      setError("");
-    }
+  const handleChange = (field) => (e) => {
+    setCredentials((prev) => ({ ...prev, [field]: e.target.value }));
+    if (error) setError("");
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (submitting) return;
 
     setSubmitting(true);
@@ -27,94 +65,142 @@ function LoginPage({ onLogin, onSwitchMode, prefillEmail = "", notice = "" }) {
         email: credentials.email.trim(),
         password: credentials.password,
       });
-
       if (!result?.ok) {
-        setError(result?.message || "Dang nhap that bai.");
+        setError(result?.message || "Đăng nhập thất bại.");
       }
     } catch (err) {
-      setError(err?.message || "Dang nhap that bai.");
+      setError(err?.message || "Đăng nhập thất bại.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="wizard-shell" style={{ justifyContent: "center" }}>
-      <div
-        className="wizard-card"
-        style={{ width: "min(420px, 92%)", margin: "0 auto" }}
-      >
-        <div style={{ textAlign: "center", marginBottom: "24px" }}>
-          <div style={{ fontSize: "44px" }}>??</div>
-          <h2 className="wizard-card__title">Dang nhap AI House Designer</h2>
-          <p className="wizard-card__subtitle">
-            Su dung tai khoan noi bo de tiep tuc theo doi va tao phuong an
-            thiet ke ngoai that.
+    <div className="auth-shell">
+      {/* Brand Section */}
+      <div className="auth-shell__brand">
+        <div className="auth-brand">
+          <div className="auth-brand__logo">
+            <div className="auth-brand__logo-icon">
+              <Icon name="palette" size={28} />
+            </div>
+            <span className="auth-brand__logo-text">Paint Studio AI</span>
+          </div>
+          
+          <h1 className="auth-brand__title">
+            Thiết kế ngoại thất<br />thông minh với AI
+          </h1>
+          <p className="auth-brand__subtitle">
+            Giải pháp tư vấn màu sơn và phong cách kiến trúc tiên tiến dành cho ngôi nhà của bạn.
           </p>
+          
+          <div className="auth-features">
+            <div className="auth-feature">
+              <span className="auth-feature__icon">🎨</span>
+              <span className="auth-feature__text">Gợi ý màu sơn phù hợp phong cách</span>
+            </div>
+            <div className="auth-feature">
+              <span className="auth-feature__icon">🏠</span>
+              <span className="auth-feature__text">Xem trước thiết kế trên ảnh thật</span>
+            </div>
+            <div className="auth-feature">
+              <span className="auth-feature__icon">⚡</span>
+              <span className="auth-feature__text">Kết quả trong vài giây</span>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <form
-          style={{ display: "flex", flexDirection: "column", gap: "18px" }}
-          onSubmit={handleSubmit}
-        >
-          <label>
-            <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
-              Email
-            </span>
-            <input
-              type="email"
-              required
-              value={credentials.email}
-              onChange={handleChange("email")}
-              className="input-text"
-              placeholder="vi du: admin@ngoai-that.ai"
-            />
-          </label>
+      {/* Form Section */}
+      <div className="auth-shell__form">
+        <div className="auth-form-container">
+          {onToggleTheme && (
+            <button
+              type="button"
+              onClick={onToggleTheme}
+              className="auth-theme-toggle"
+              aria-label={theme === "light" ? "Chế độ tối" : "Chế độ sáng"}
+            >
+              <Icon name={theme === "light" ? "moon" : "sun"} size={20} />
+            </button>
+          )}
 
-          <label>
-            <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
-              Mat khau
-            </span>
-            <input
-              type="password"
-              required
-              value={credentials.password}
-              onChange={handleChange("password")}
-              className="input-text"
-              placeholder="Nhap mat khau"
-            />
-          </label>
+          <div className="auth-form-header">
+            <h2 className="auth-form-title">Đăng nhập</h2>
+            <p className="auth-form-subtitle">
+              Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục.
+            </p>
+          </div>
 
-          {notice ? <div className="alert info">{notice}</div> : null}
-          {error ? <div className="alert error">{error}</div> : null}
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <div className="auth-form__field">
+              <label className="auth-form__label" htmlFor="email">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={credentials.email}
+                onChange={handleChange("email")}
+                className="auth-form__input"
+                placeholder="you@example.com"
+                autoComplete="email"
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={submitting}
-          >
-            {submitting ? "Dang nhap..." : "Dang nhap"}
-          </button>
-        </form>
+            <div className="auth-form__field">
+              <label className="auth-form__label" htmlFor="password">
+                Mật khẩu
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                value={credentials.password}
+                onChange={handleChange("password")}
+                className="auth-form__input"
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
+            </div>
 
-        <p
-          style={{
-            textAlign: "center",
-            marginTop: "18px",
-            fontSize: "0.85rem",
-            color: "rgba(226,233,255,0.7)",
-          }}
-        >
-          Chua co tai khoan?
-          <button
-            type="button"
-            onClick={() => onSwitchMode("register")}
-            className="btn btn-ghost"
-            style={{ marginLeft: "8px", padding: "6px 14px" }}
-          >
-            Dang ky ngay
-          </button>
-        </p>
+            {notice && (
+              <div className="auth-form__notice auth-form__notice--info">{notice}</div>
+            )}
+            {error && (
+              <div className="auth-form__notice auth-form__notice--error">{error}</div>
+            )}
+
+            <button
+              type="submit"
+              className="auth-form__submit"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <span className="auth-form__spinner" />
+                  Đang đăng nhập...
+                </>
+              ) : (
+                "Đăng nhập"
+              )}
+            </button>
+          </form>
+
+          <div className="auth-form-footer">
+            <p>
+              Chưa có tài khoản?{" "}
+              <button
+                type="button"
+                onClick={() => onSwitchMode("register")}
+                className="auth-form__link"
+              >
+                Đăng ký miễn phí
+              </button>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

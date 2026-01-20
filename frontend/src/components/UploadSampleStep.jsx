@@ -1,4 +1,4 @@
-﻿import { useRef } from "react";
+import { useRef } from "react";
 import WizardNavigation from "./WizardNavigation.jsx";
 
 function UploadSampleStep({
@@ -11,70 +11,71 @@ function UploadSampleStep({
 }) {
   const fileInputRef = useRef(null);
 
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0] ?? null;
-    if (file) {
-      onSampleSelected(file);
-    }
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0] ?? null;
+    if (file) onSampleSelected(file);
   };
 
-  const handleDrop = (event) => {
-    event.preventDefault();
-    const file = event.dataTransfer.files?.[0] ?? null;
-    if (file) {
-      onSampleSelected(file);
-    }
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0] ?? null;
+    if (file) onSampleSelected(file);
   };
 
-  const preventDefaults = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const preventDefaults = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const fileName = sampleImage?.file?.name ?? sampleImage?.name ?? "Chưa chọn";
 
   return (
-    <div>
-      {loading ? (
-        <div className="wizard-progress" role="status" aria-live="assertive">
-          <span className="wizard-progress__spinner" aria-hidden="true" />
-          <div className="wizard-progress__text">
-            <strong>Đang tải ảnh mẫu lên máy chủ...</strong>
-            <span>Bước 1/4 – Vui lòng giữ trình duyệt mở trong khi xử lý.</span>
+    <div className="wizard-card animate-slide-up">
+      {loading && (
+        <div className="loading-card">
+          <div className="loading-card__spinner" />
+          <div className="loading-card__text">
+            <div className="loading-card__title">Đang tải ảnh mẫu lên máy chủ...</div>
+            <div className="loading-card__subtitle">Bước 1/4 – Vui lòng giữ trình duyệt mở.</div>
           </div>
         </div>
-      ) : null}
+      )}
 
+      {/* Header */}
+      <div className="wizard-card__header">
+        <span className="wizard-card__step-badge">Bước 1 / 4</span>
+        <h2 className="wizard-card__title">Tải ảnh mẫu truyền cảm hứng</h2>
+        <p className="wizard-card__subtitle">
+          Chọn một bức ảnh ngoại thất bạn yêu thích để AI phân tích phong cách, vật liệu và màu sắc.
+        </p>
+      </div>
+
+      {/* Upload Zone */}
       <div className="wizard-card__section">
-        <div style={{ textAlign: "center", marginBottom: "28px" }}>
-          <div style={{ fontSize: "44px", letterSpacing: "0.2em", opacity: 0.6 }}>BƯỚC 01</div>
-          <h2 className="wizard-card__title">Tải ảnh mẫu truyền cảm hứng</h2>
-          <p className="wizard-card__subtitle">
-            Chọn một bức ảnh ngoại thất bạn yêu thích để AI phân tích phong cách, vật liệu và ánh sáng.
-          </p>
-        </div>
-
         <div
-          className="upload-dropzone"
+          className={`upload-zone${sampleImage?.preview ? " upload-zone--has-preview" : ""}`}
           onDragEnter={preventDefaults}
           onDragOver={preventDefaults}
           onDragLeave={preventDefaults}
           onDrop={handleDrop}
+          onClick={() => !sampleImage?.preview && fileInputRef.current?.click()}
         >
           {sampleImage?.preview ? (
             <>
-              <div className="preview-frame" style={{ marginBottom: "16px" }}>
-                <div className="preview-image">
-                  <img src={sampleImage.preview} alt="Ảnh mẫu" />
-                </div>
+              <div className="upload-preview">
+                <img src={sampleImage.preview} alt="Ảnh mẫu" />
               </div>
-              <p style={{ marginBottom: "12px", fontSize: "0.85rem", color: "rgba(144,255,195,0.85)" }}>
-                Ảnh đã chọn: <strong>{fileName}</strong>
-              </p>
+              <div className="upload-preview__info">
+                <span className="tag tag--success">✓ Đã chọn</span>
+                <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>{fileName}</span>
+              </div>
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
                 disabled={loading}
               >
                 Thay đổi ảnh
@@ -82,47 +83,77 @@ function UploadSampleStep({
             </>
           ) : (
             <>
-              <div style={{ fontSize: "38px", marginBottom: "12px" }}>📸</div>
-              <h3>Kéo thả ảnh mẫu vào khung</h3>
-              <p>hoặc nhấn để chọn ảnh từ thiết bị</p>
-              <p style={{ fontSize: "0.82rem", marginTop: "12px" }}>
-                Hỗ trợ JPG, PNG với dung lượng tối đa 15MB
-              </p>
+              <div className="upload-zone__icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="m21 15-5-5L5 21" />
+                </svg>
+              </div>
+              <h3 className="upload-zone__title">Kéo thả ảnh vào đây</h3>
+              <p className="upload-zone__text">hoặc click để chọn từ máy tính</p>
               <button
                 type="button"
                 className={`btn btn-primary${loading ? " btn--loading" : ""}`}
-                style={{ marginTop: "22px" }}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
                 disabled={loading}
+                style={{ marginTop: "var(--space-4)" }}
               >
                 {loading ? (
                   <>
-                    <span className="btn__spinner" aria-hidden="true" />
-                    <span>Đang tải...</span>
+                    <span className="btn__spinner" />
+                    Đang tải...
                   </>
                 ) : (
                   "Chọn ảnh mẫu"
                 )}
               </button>
-              <p style={{ marginTop: "12px", fontSize: "0.85rem", color: "rgba(226,233,255,0.7)" }}>
-                Mẹo: Ưu tiên ảnh sắc nét, bố cục rõ để AI hiểu phong cách nhanh hơn.
-              </p>
+              <p className="upload-zone__hint">Hỗ trợ JPG, PNG - Tối đa 15MB</p>
             </>
           )}
           <input
             ref={fileInputRef}
-            className="hidden-input"
             type="file"
             accept="image/*"
             onChange={handleFileChange}
             style={{ display: "none" }}
           />
         </div>
+      </div>
 
-        <div className="alert info" style={{ marginTop: "18px" }} role="status" aria-live="polite">
-          {apiMessage || "Sau khi tải ảnh thành công, hệ thống sẽ gợi ý phong cách phù hợp."}
+      {/* Tips */}
+      <div className="wizard-card__section">
+        <div style={{ display: "grid", gap: "var(--space-3)" }}>
+          <div className="info-card">
+            <div className="info-card__icon">📐</div>
+            <div className="info-card__content">
+              <div className="info-card__title">Bố cục rõ ràng</div>
+              <p className="info-card__text">Chọn ảnh có góc chụp chính diện hoặc 3/4</p>
+            </div>
+          </div>
+          <div className="info-card">
+            <div className="info-card__icon">💡</div>
+            <div className="info-card__content">
+              <div className="info-card__title">Ánh sáng tốt</div>
+              <p className="info-card__text">Ảnh ban ngày giúp nhận diện màu sắc chính xác</p>
+            </div>
+          </div>
+          <div className="info-card">
+            <div className="info-card__icon">🎨</div>
+            <div className="info-card__content">
+              <div className="info-card__title">Phong cách yêu thích</div>
+              <p className="info-card__text">Chọn ảnh có màu sơn và kiến trúc bạn muốn áp dụng</p>
+            </div>
+          </div>
         </div>
       </div>
+
+      {apiMessage && (
+        <div className="alert alert--info">{apiMessage}</div>
+      )}
 
       <WizardNavigation
         onBack={() => {}}

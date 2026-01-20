@@ -10,7 +10,12 @@ async function bootstrap() {
     console.error("[AdminSeeder] Không thể tạo tài khoản admin mặc định:", error);
   }
 
-  app.listen(PORT, () => console.log("🚀 Server running on port", PORT));
+  const server = app.listen(PORT, () => console.log("🚀 Server running on port", PORT));
+  
+  // Tăng timeout cho server (3 phút cho AI image generation)
+  server.timeout = 180000; // 180 seconds
+  server.keepAliveTimeout = 180000;
+  server.headersTimeout = 185000;
 }
 
 bootstrap();
