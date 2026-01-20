@@ -323,6 +323,10 @@ function useWizardFlow({ steps = [], pushToast = () => { }, user } = {}) {
     setLoadingState((prev) => ({ ...prev, house: true }));
     setApiMessages((prev) => ({ ...prev, house: "" }));
 
+    // Debug: Log token being sent
+    console.log("[GenerateFinal] User token:", user.token ? "Present (length: " + user.token.length + ")" : "MISSING!");
+    console.log("[GenerateFinal] User object:", { id: user.id, email: user.email, role: user.role });
+
     try {
       const response = await generateFinal(
         tempId,

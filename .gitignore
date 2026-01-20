@@ -23,3 +23,7 @@ pnpm-debug.log*
 
 # system
 Thumbs.db
+.cursor/
+testAI/
+tests-e2e/
+.VSCodeCounter/

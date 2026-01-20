@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import "./App.css";
 import HistoryViewer from "./components/HistoryViewer.jsx";
 import LoginPage from "./components/LoginPage.jsx";
 import RegisterPage from "./components/RegisterPage.jsx";
@@ -14,6 +15,25 @@ import useToasts from "./hooks/useToasts.js";
 import useWizardFlow from "./hooks/useWizardFlow.js";
 import useHistoryManager from "./hooks/useHistoryManager.js";
 import AdminLayout from "./components/AdminLayout.jsx";
+
+// Theme utilities
+const THEME_STORAGE_KEY = "exteriorTheme";
+const THEMES = { LIGHT: "light", DARK: "dark" };
+
+function getInitialTheme() {
+  if (typeof window === "undefined") return THEMES.LIGHT;
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === THEMES.LIGHT || stored === THEMES.DARK) return stored;
+  } catch (e) {
+    console.warn("Could not read theme from localStorage:", e);
+  }
+  // Check system preference
+  if (window.matchMedia?.("(prefers-color-scheme: dark)")?.matches) {
+    return THEMES.DARK;
+  }
+  return THEMES.LIGHT;
+}
 
 const iconBaseProps = {
   viewBox: "0 0 24 24",
@@ -123,6 +143,26 @@ function Icon({ name, size = 18, className }) {
           <path d="M13 18.5c.3-2.1 1.9-3.4 3.8-3.4 1 0 2 .3 2.7.9" />
         </svg>
       );
+    case "sun":
+      return (
+        <svg {...props}>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2" />
+          <path d="M12 20v2" />
+          <path d="m4.93 4.93 1.41 1.41" />
+          <path d="m17.66 17.66 1.41 1.41" />
+          <path d="M2 12h2" />
+          <path d="M20 12h2" />
+          <path d="m6.34 17.66-1.41 1.41" />
+          <path d="m19.07 4.93-1.41 1.41" />
+        </svg>
+      );
+    case "moon":
+      return (
+        <svg {...props}>
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -130,8 +170,7 @@ function Icon({ name, size = 18, className }) {
 
 const steps = [
   { id: "sample", label: "Ảnh mẫu", icon: "palette" },
-  { id: "requirements", label: "Yêu cầu", icon: "spark" },
-  { id: "house", label: "Ảnh hiện trạng", icon: "camera" },
+  { id: "requirements", label: "Ngũ Hành", icon: "spark" },
   { id: "result", label: "Kết quả", icon: "check" },
 ];
 
@@ -154,6 +193,39 @@ function deriveNameFromEmail(email = "") {
 }
 
 function App() {
+  // Theme state
+  const [theme, setTheme] = useState(getInitialTheme);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => (prev === THEMES.LIGHT ? THEMES.DARK : THEMES.LIGHT));
+  }, []);
+
+  // Apply theme to document and persist to localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    document.documentElement.setAttribute("data-theme", theme);
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (e) {
+      console.warn("Could not save theme to localStorage:", e);
+    }
+  }, [theme]);
+
+  // Listen for system preference changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e) => {
+      // Only auto-switch if user hasn't manually set a preference
+      const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+      if (!stored) {
+        setTheme(e.matches ? THEMES.DARK : THEMES.LIGHT);
+      }
+    };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
   const [user, setUser] = useState(() => {
     if (typeof window === "undefined") return null;
     try {
@@ -312,6 +384,11 @@ useEffect(() => {
     const normalizedEmail = normaliseEmail(email);
     try {
       const response = await loginUser({ email: normalizedEmail, password });
+      
+      // Debug: Log response để kiểm tra token
+      console.log("[Login] API Response:", response);
+      console.log("[Login] Token received:", response?.token ? "Yes (length: " + response.token.length + ")" : "No");
+      
       const backendUser =
         response && typeof response === "object" && response.user ? response.user : {};
       const resolvedEmail = backendUser.email || normalizedEmail;
@@ -324,6 +401,12 @@ useEffect(() => {
           deriveNameFromEmail(resolvedEmail),
         token: (response && response.token) || "",
       };
+      
+      // Debug: Kiểm tra token trước khi lưu
+      if (!signedInUser.token) {
+        console.error("[Login] WARNING: Token is empty! Check backend JWT_SECRET configuration.");
+      }
+      
       setUser(signedInUser);
       setActiveView("wizard");
       setAuthMode("login");
@@ -404,29 +487,19 @@ useEffect(() => {
         apiMessage={apiMessages.requirements}
       />
     );
-  } else if (currentStepId === "house") {
-    stepContent = (
-      <UploadHouseStep
-        houseImage={wizardData.houseImage}
-        sampleImage={wizardData.sampleImage}
-        requirements={wizardData.requirements}
-        onHouseSelected={handleHouseSelected}
-        onBack={goBack}
-        onNext={handleGenerateFinal}
-        loading={loadingState.house}
-        apiMessage={apiMessages.house}
-      />
-    );
   } else {
+    // Result step - handles house upload + generate + result display
     stepContent = (
       <ResultStep
         data={wizardData}
-        history={visibleHistory}
+        onHouseSelected={handleHouseSelected}
+        onGenerate={handleGenerateFinal}
         onSaveHistory={(notes) => saveHistory(wizardData, notes)}
-        onDeleteHistory={deleteHistoryEntry}
         onBack={goBack}
         onRestart={resetWizard}
-        apiMessage={apiMessages.result}
+        onRegenerate={handleGenerateFinal}
+        loading={loadingState.house}
+        apiMessage={apiMessages.house || apiMessages.result}
       />
     );
   }
@@ -452,6 +525,8 @@ useEffect(() => {
         <RegisterPage
           onRegister={handleRegister}
           onSwitchMode={handleSwitchAuthMode}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
       );
     }
@@ -461,6 +536,8 @@ useEffect(() => {
         onSwitchMode={handleSwitchAuthMode}
         prefillEmail={authPrefillEmail}
         notice={authNotice}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
     );
   }
@@ -470,71 +547,68 @@ useEffect(() => {
       <ToastList toasts={toasts} onDismiss={dismissToast} />
       <header className={`app-header ${isHeaderCollapsed ? "app-header--hidden" : ""}`}>
         <div className="app-header__inner">
-          <div className={`app-header__row${isHeaderCollapsed ? " app-header__row--hidden" : ""}`}>
-            <div className="app-header__brand">
-              <span className="app-logo-chip">
-                <Icon name="logo" size={26} />
-              </span>
-              <div className="app-header__brand-text">
-                <p className="app-header__title">AI House Designer</p>
-              </div>
+          {/* Logo */}
+          <div className="app-logo">
+            <div className="app-logo__icon">
+              <Icon name="logo" size={22} />
             </div>
+            <span className="app-logo__text">Paint <span>Studio</span></span>
           </div>
 
-          <div className="app-header__meta">
-            <h1 className="app-header__headline">{headerTitle}</h1>
-          </div>
-
-          <div className="app-header__nav">
-            <div className="app-header__nav-actions">
-              <div className="header-avatar">
-                <div className="header-avatar__circle">
-                  <span>{displayInitials}</span>
-                  <span className="header-avatar__badge">
-                    <Icon name="home" size={15} />
-                  </span>
-                </div>
-                <div className="header-avatar__info">
-                  <p className="header-avatar__name">{displayName}</p>
-                  <p className="header-avatar__role">{roleLabel}</p>
-                </div>
-              </div>
-
-              <button type="button" onClick={handleLogout} className="nav-chip nav-chip--ghost">
-                <Icon name="logout" size={15} className="nav-chip__icon" />
-                Đăng xuất
-              </button>
-            </div>
-
-            <nav className="app-nav" aria-label="Điều hướng">
-              {navigationItems.map(({ id, label, icon }) => {
-                const isActive =
-                  id === "admin-area"
-                    ? isAdminArea
-                    : !isAdminArea && activeView === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => {
-                      if (id === "admin-area") {
-                        if (user?.role === "admin") {
-                          setIsAdminArea(true);
-                        }
-                      } else {
-                        setIsAdminArea(false);
-                        setActiveView(id);
+          {/* Navigation */}
+          <nav className="app-nav" aria-label="Điều hướng">
+            {navigationItems.map(({ id, label, icon }) => {
+              const isActive =
+                id === "admin-area"
+                  ? isAdminArea
+                  : !isAdminArea && activeView === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    if (id === "admin-area") {
+                      if (user?.role === "admin") {
+                        setIsAdminArea(true);
                       }
-                    }}
-                    className={`nav-chip${isActive ? " nav-chip--active" : ""}`}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    <Icon name={icon} size={16} className="nav-chip__icon" />
-                    {label}
-                  </button>
-                );
-              })}
-            </nav>
+                    } else {
+                      setIsAdminArea(false);
+                      setActiveView(id);
+                    }
+                  }}
+                  className={`nav-item${isActive ? " nav-item--active" : ""}`}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <Icon name={icon} size={18} />
+                  {label}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Actions */}
+          <div className="app-header__actions">
+            <div className="user-profile">
+              <div className="user-profile__avatar">{displayInitials}</div>
+              <div className="user-profile__info">
+                <span className="user-profile__name">{displayName}</span>
+                <span className="user-profile__role">{roleLabel}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="theme-toggle"
+              aria-label={theme === THEMES.LIGHT ? "Chế độ tối" : "Chế độ sáng"}
+            >
+              <Icon name={theme === THEMES.LIGHT ? "moon" : "sun"} size={20} />
+            </button>
+
+            <button type="button" onClick={handleLogout} className="btn-logout">
+              <Icon name="logout" size={18} />
+              Đăng xuất
+            </button>
           </div>
         </div>
       </header>
@@ -574,17 +648,27 @@ useEffect(() => {
                     <p className="header-avatar__role">{roleLabel}</p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsQuickMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="nav-chip nav-chip--ghost quick-menu__logout"
-                >
-                  <Icon name="logout" size={15} className="nav-chip__icon" />
-                  Đăng xuất
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className="theme-toggle"
+                    aria-label={theme === THEMES.LIGHT ? "Chuyển sang chế độ tối" : "Chuyển sang chế độ sáng"}
+                  >
+                    <Icon name={theme === THEMES.LIGHT ? "moon" : "sun"} size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsQuickMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="nav-chip nav-chip--ghost quick-menu__logout"
+                  >
+                    <Icon name="logout" size={15} className="nav-chip__icon" />
+                    Đăng xuất
+                  </button>
+                </div>
               </div>
 
               <nav className="quick-menu__nav" aria-label="Menu điều hướng">
@@ -621,39 +705,31 @@ useEffect(() => {
         </>
       ) : null}
 
-      <main className="app-main wizard-main">
+      <main className="app-main">
         {activeView === "wizard" && (
           <div className="step-progress" role="list" aria-label="Tiến trình thiết kế">
-            <div className="step-progress__items">
-              {steps.map((step, index) => {
-                const isActive = index === stepIndex;
-                const isComplete = index < stepIndex;
-                return (
+            {steps.map((step, index) => {
+              const isActive = index === stepIndex;
+              const isComplete = index < stepIndex;
+              return (
+                <div key={step.id} style={{ display: "flex", alignItems: "center" }}>
+                  {index > 0 && (
+                    <div className={`step-progress__connector${isComplete ? " is-complete" : ""}`} />
+                  )}
                   <div
-                    key={step.id}
-                    className={`step-progress__item${isActive ? " is-active" : ""}${
-                      isComplete ? " is-complete" : ""
-                    }`}
+                    className={`step-progress__item${isActive ? " is-active" : ""}${isComplete ? " is-complete" : ""}`}
                     role="listitem"
                   >
-                    <div className="step-progress__status">
-                      <Icon name={step.icon} size={18} className="step-progress__icon" />
-                    </div>
-                    <div className="step-progress__text">
-                      <span className="step-progress__label">{step.label}</span>
-                      <span className="step-progress__caption">Bước {index + 1}</span>
-                    </div>
+                    <div className="step-progress__number">{index + 1}</div>
+                    <span className="step-progress__label">{step.label}</span>
                   </div>
-                );
-              })}
-            </div>
-            <div className="step-progress__bar" aria-hidden="true">
-              <div className="step-progress__bar-fill" style={{ width: `${progressPercent}%` }} />
-            </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
-          <div className="app-stage">
+        <div className="app-stage">
           {activeView === "wizard" ? (
             stepContent
           ) : activeView === "history" ? (
@@ -692,19 +768,16 @@ useEffect(() => {
       <footer className="app-footer">
         <div className="app-footer__inner">
           <div>
-            <p className="app-footer__brand">AI House Designer</p>
-            <p className="app-footer__tagline">Trợ lý thiết kế ngoại thất thông minh</p>
+            <p className="app-footer__brand">Paint Studio AI</p>
+            <p className="app-footer__tagline">Giải pháp tư vấn màu sơn & thiết kế ngoại thất</p>
           </div>
           <div className="app-footer__links">
             <span className="app-footer__copyright">
-              © {new Date().getFullYear()} Ngoại Thất AI
+              © {new Date().getFullYear()} Paint Studio
             </span>
-            <a href="#" className="app-footer__link">
-              Điều khoản
-            </a>
-            <a href="#" className="app-footer__link">
-              Liên hệ
-            </a>
+            <a href="#" className="app-footer__link">Điều khoản</a>
+            <a href="#" className="app-footer__link">Hỗ trợ</a>
+            <a href="#" className="app-footer__link">Liên hệ</a>
           </div>
         </div>
       </footer>

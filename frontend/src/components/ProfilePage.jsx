@@ -1,22 +1,11 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 function ProfilePage({ user, historyEntries = [], draft, onDeleteHistory }) {
-  const {
-    requirements = { style: "", colorPalette: "", decorItems: "", aiSuggestions: "" },
-    sampleImage = null,
-    houseImage = null,
-  } = draft || {};
-
+  const { requirements = {}, sampleImage = null, houseImage = null } = draft || {};
   const [expandedId, setExpandedId] = useState(null);
 
-  const hasDraftDetails =
-    Boolean(sampleImage || houseImage) ||
-    Boolean(
-      requirements.colorPalette ||
-        requirements.decorItems ||
-        requirements.aiSuggestions ||
-        requirements.style
-    );
+  const hasDraftDetails = Boolean(sampleImage || houseImage) ||
+    Boolean(requirements.colorPalette || requirements.decorItems || requirements.aiSuggestions || requirements.style);
 
   const sortedHistory = useMemo(() => {
     return [...historyEntries].sort((a, b) => {
@@ -26,232 +15,150 @@ function ProfilePage({ user, historyEntries = [], draft, onDeleteHistory }) {
     });
   }, [historyEntries]);
 
-  const toggleExpanded = (entryId) => {
-    setExpandedId((current) => (current === entryId ? null : entryId));
-  };
+  const displayInitials = useMemo(() => {
+    const name = user?.name || user?.email || "";
+    if (!name) return "U";
+    const parts = name.split(/\s+/);
+    return parts.map((p) => p.charAt(0)).join("").slice(0, 2).toUpperCase() || "U";
+  }, [user?.name, user?.email]);
 
   return (
-    <div className="space-y-8">
-      <div className="wizard-card__section">
-        <div style={{ textAlign: "center", marginBottom: "28px" }}>
-          <div style={{ fontSize: "40px" }}>👤</div>
-          <h2 className="wizard-card__title">Hồ sơ cá nhân</h2>
-          <p className="wizard-card__subtitle">
-            Quản lý thông tin tài khoản, xem lịch sử và những bản nháp bạn đang thực hiện.
-          </p>
-        </div>
-
-        <div className="info-grid" style={{ gap: "20px" }}>
-          <article className="info-card" style={{ textAlign: "left" }}>
-            <h3>Thông tin tài khoản</h3>
-            <p style={{ marginTop: "12px" }}>
-              <strong>Tên hiển thị:</strong> {user?.name || "Chưa cập nhật"}
-            </p>
-            <p style={{ marginTop: "8px" }}>
-              <strong>Email:</strong> {user?.email}
-            </p>
-            <p style={{ marginTop: "8px" }}>
-              <strong>Vai trò:</strong> {user?.role === "admin" ? "Quản trị viên" : "Nhà thiết kế"}
-            </p>
-          </article>
-
-          <article className="info-card" style={{ textAlign: "left" }}>
-            <h3>Yêu cầu đang soạn</h3>
-            {hasDraftDetails ? (
-              <ul style={{ marginTop: "12px", paddingLeft: "20px", lineHeight: 1.6 }}>
-                <li>
-                  <strong>Phong cách:</strong> {requirements.style || "Chưa chọn"}
-                </li>
-                <li>
-                  <strong>Bảng màu:</strong> {requirements.colorPalette || "Chưa nhập"}
-                </li>
-                <li>
-                  <strong>Điểm nhấn:</strong> {requirements.decorItems || "Chưa nhập"}
-                </li>
-                <li>
-                  <strong>Ghi chú AI:</strong> {requirements.aiSuggestions || "Không có"}
-                </li>
-                <li>
-                  <strong>Ảnh mẫu:</strong> {sampleImage?.file?.name || sampleImage?.name || "Chưa tải lên"}
-                </li>
-                <li>
-                  <strong>Ảnh hiện trạng:</strong> {houseImage?.file?.name || houseImage?.name || "Chưa tải lên"}
-                </li>
-              </ul>
-            ) : (
-              <p style={{ marginTop: "12px", opacity: 0.7 }}>
-                Bạn chưa bắt đầu hoặc đang ở bước đầu tiên của một yêu cầu mới.
-              </p>
-            )}
-          </article>
+    <div className="animate-slide-up" style={{ maxWidth: "900px", margin: "0 auto" }}>
+      {/* Profile Header */}
+      <div className="profile-header">
+        <div className="profile-avatar">{displayInitials}</div>
+        <div className="profile-info">
+          <h1 className="profile-info__name">{user?.name || "Người dùng"}</h1>
+          <p className="profile-info__email">{user?.email}</p>
+          <span className="profile-info__role">
+            {user?.role === "admin" ? "Quản trị viên" : "Khách hàng"}
+          </span>
         </div>
       </div>
 
-      <div className="wizard-card__section">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <h3 style={{ marginBottom: "8px" }}>Lịch sử yêu cầu của bạn</h3>
-            <p style={{ color: "rgba(226,233,255,0.75)" }}>
-              Theo dõi tiến trình và các phương án đã gửi trước đó.
-            </p>
+      {/* Stats */}
+      <div className="profile-stats">
+        <div className="profile-stat">
+          <span className="profile-stat__value">{sortedHistory.length}</span>
+          <span className="profile-stat__label">Dự án đã lưu</span>
+        </div>
+        <div className="profile-stat">
+          <span className="profile-stat__value">{hasDraftDetails ? "1" : "0"}</span>
+          <span className="profile-stat__label">Bản nháp</span>
+        </div>
+      </div>
+
+      {/* Current Draft */}
+      {hasDraftDetails && (
+        <div className="profile-section">
+          <div className="profile-section__header">
+            <h2 className="profile-section__title">Dự án đang thực hiện</h2>
+            <span className="tag tag--primary">Đang tiến hành</span>
           </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "var(--space-4)" }}>
+            <div>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>Phong cách</div>
+              <div style={{ fontWeight: 500 }}>{requirements.style || "Chưa chọn"}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>Bảng màu</div>
+              <div>{requirements.colorPalette || "Chưa nhập"}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>Chi tiết</div>
+              <div>{requirements.decorItems || "Chưa nhập"}</div>
+            </div>
+          </div>
+          {(sampleImage || houseImage) && (
+            <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-4)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--color-border-light)" }}>
+              {sampleImage && (
+                <div>
+                  <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", marginBottom: "var(--space-2)" }}>Ảnh mẫu</div>
+                  <img src={sampleImage.preview || sampleImage.dataUrl} alt="Ảnh mẫu" style={{ width: "120px", borderRadius: "var(--radius-lg)" }} />
+                </div>
+              )}
+              {houseImage && (
+                <div>
+                  <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", marginBottom: "var(--space-2)" }}>Ảnh hiện trạng</div>
+                  <img src={houseImage.preview || houseImage.dataUrl} alt="Ảnh hiện trạng" style={{ width: "120px", borderRadius: "var(--radius-lg)" }} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* History */}
+      <div className="profile-section">
+        <div className="profile-section__header">
+          <h2 className="profile-section__title">Lịch sử dự án</h2>
           <span className="tag">{sortedHistory.length} dự án</span>
         </div>
 
-        {sortedHistory.length ? (
-          <div className="history-grid" style={{ marginTop: "18px" }}>
+        {sortedHistory.length > 0 ? (
+          <div className="history-grid">
             {sortedHistory.map((entry) => {
               const formattedDate = entry?.createdAt
                 ? new Date(entry.createdAt).toLocaleString("vi-VN")
-                : "Chưa cập nhật";
+                : "—";
               const isExpanded = expandedId === entry.id;
-              const hasSampleImage = Boolean(entry.sampleImageDataUrl);
-              const hasHouseImage = Boolean(entry.houseImageDataUrl);
-              const hasResultImage = Boolean(entry.outputImageUrl);
-              return (
-                <article key={entry.id} className="history-card">
-                  <div className="tag tag--accent">
-                    #{(entry.id || "").slice(0, 8).toUpperCase() || "YEUCAU"}
-                  </div>
-                  <p style={{ fontSize: "0.82rem", opacity: 0.75 }}>Tạo lúc: {formattedDate}</p>
-                  <p>
-                    <strong>Phong cách:</strong> {entry.style || "Chưa ghi chú"}
-                  </p>
-                  <p>
-                    <strong>Bảng màu:</strong> {entry.colorPalette || "Chưa ghi chú"}
-                  </p>
-                  <p>
-                    <strong>Điểm nhấn:</strong> {entry.decorItems || "Chưa ghi chú"}
-                  </p>
-                  <p>
-                    <strong>Ghi chú AI:</strong> {entry.aiSuggestions || "Không có"}
-                  </p>
-                  <p>
-                    <strong>Trạng thái:</strong> {entry.status?.replace("_", " ") || "Đang chờ"}
-                  </p>
-                  {entry.notes ? (
-                    <p style={{ fontSize: "0.8rem", opacity: 0.65 }}>
-                      <strong>Ghi chú người dùng:</strong> {entry.notes}
-                    </p>
-                  ) : null}
 
-                  {typeof onDeleteHistory === "function" ? (
+              return (
+                <div key={entry.id} className="history-card">
+                  <div className="history-card__header">
+                    <span className="history-card__id">#{(entry.id || "").slice(0, 8)}</span>
+                    <span className="history-card__date">{formattedDate}</span>
+                  </div>
+                  <div className="history-card__style">{entry.style || "Chưa rõ"}</div>
+                  <div className="history-card__details">
+                    <div>Màu: {entry.colorPalette || "—"}</div>
+                    <div>Chi tiết: {entry.decorItems || "—"}</div>
+                  </div>
+
+                  {entry.outputImageUrl && (
+                    <div className="history-card__images">
+                      <img src={entry.outputImageUrl} alt="Kết quả" />
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)" }}>
                     <button
                       type="button"
-                      onClick={() => onDeleteHistory(entry.id)}
-                      className="btn btn-secondary"
-                      style={{
-                        marginTop: "8px",
-                        alignSelf: "flex-start",
-                        fontSize: "0.75rem",
-                      }}
+                      onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+                      className="btn btn-ghost"
+                      style={{ flex: 1, fontSize: "var(--text-sm)" }}
                     >
-                      Xóa yêu cầu này
+                      {isExpanded ? "Thu gọn" : "Chi tiết"}
                     </button>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={() => toggleExpanded(entry.id)}
-                    className="btn btn-secondary"
-                    style={{
-                      marginTop: "12px",
-                      alignSelf: "flex-start",
-                      fontSize: "0.75rem",
-                      letterSpacing: "0.14em",
-                    }}
-                  >
-                    {isExpanded ? "Thu gọn" : "Xem chi tiết các bước"}
-                  </button>
-
-                  {isExpanded ? (
-                    <div
-                      style={{
-                        marginTop: "18px",
-                        borderRadius: "16px",
-                        border: "1px solid rgba(148, 163, 209, 0.18)",
-                        background: "rgba(12, 18, 32, 0.75)",
-                        padding: "16px 18px",
-                        display: "grid",
-                        gap: "16px",
-                      }}
-                    >
-                      <div>
-                        <h4 style={{ margin: 0, fontSize: "0.92rem", letterSpacing: "0.06em" }}>
-                          Tóm tắt quy trình
-                        </h4>
-                        <ul
-                          style={{
-                            marginTop: "10px",
-                            paddingLeft: "20px",
-                            lineHeight: 1.65,
-                            fontSize: "0.85rem",
-                            color: "rgba(226,233,255,0.75)",
-                          }}
-                        >
-                          <li>
-                            <strong>Bước 01:</strong> Chọn ảnh mẫu {entry.sampleImageName ? `(${entry.sampleImageName})` : ""}
-                          </li>
-                          <li>
-                            <strong>Bước 02:</strong> Thiết lập phong cách "{entry.style || "Chưa rõ"}"
-                            {entry.colorPalette ? `, bảng màu "${entry.colorPalette}"` : ""}
-                          </li>
-                          <li>
-                            <strong>Bước 03:</strong> Tải ảnh hiện trạng {entry.houseImageName ? `(${entry.houseImageName})` : ""}
-                          </li>
-                          <li>
-                            <strong>Bước 04:</strong> Nhận kết quả và lưu phương án gợi ý.
-                          </li>
-                        </ul>
-                      </div>
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gap: "14px",
-                          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                        }}
+                    {typeof onDeleteHistory === "function" && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteHistory(entry.id)}
+                        className="btn btn-ghost"
+                        style={{ fontSize: "var(--text-sm)" }}
                       >
-                        {hasSampleImage ? (
-                          <figure style={{ margin: 0 }}>
-                            <div className="preview-image" style={{ marginBottom: "8px" }}>
-                              <img src={entry.sampleImageDataUrl} alt="Ảnh mẫu đã lưu" loading="lazy" />
-                            </div>
-                            <figcaption style={{ fontSize: "0.74rem", opacity: 0.7 }}>
-                              Ảnh mẫu tham chiếu
-                            </figcaption>
-                          </figure>
-                        ) : null}
-                        {hasHouseImage ? (
-                          <figure style={{ margin: 0 }}>
-                            <div className="preview-image" style={{ marginBottom: "8px" }}>
-                              <img src={entry.houseImageDataUrl} alt="Ảnh hiện trạng đã lưu" loading="lazy" />
-                            </div>
-                            <figcaption style={{ fontSize: "0.74rem", opacity: 0.7 }}>
-                              Ảnh hiện trạng
-                            </figcaption>
-                          </figure>
-                        ) : null}
-                        {hasResultImage ? (
-                          <figure style={{ margin: 0 }}>
-                            <div className="preview-image" style={{ marginBottom: "8px" }}>
-                              <img src={entry.outputImageUrl} alt="Ảnh gợi ý từ AI" loading="lazy" />
-                            </div>
-                            <figcaption style={{ fontSize: "0.74rem", opacity: 0.7 }}>
-                              Kết quả AI
-                            </figcaption>
-                          </figure>
-                        ) : null}
+                        Xóa
+                      </button>
+                    )}
+                  </div>
+
+                  {isExpanded && (
+                    <div style={{ marginTop: "var(--space-4)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--color-border-light)", fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+                      <div style={{ marginBottom: "var(--space-2)" }}>
+                        <strong>Ghi chú AI:</strong> {entry.aiSuggestions || "Không có"}
                       </div>
+                      {entry.notes && (
+                        <div><strong>Ghi chú:</strong> {entry.notes}</div>
+                      )}
                     </div>
-                  ) : null}
-                </article>
+                  )}
+                </div>
               );
             })}
           </div>
         ) : (
-          <div className="alert info" style={{ marginTop: "16px" }}>
-            Bạn chưa lưu lịch sử nào. Hoàn tất quy trình để lưu lại các phương án đã tạo.
+          <div className="alert alert--info">
+            Bạn chưa lưu dự án nào. Hoàn tất quy trình thiết kế để lưu lại.
           </div>
         )}
       </div>

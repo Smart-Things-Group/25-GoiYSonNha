@@ -1,47 +1,54 @@
-﻿import WizardNavigation from "./WizardNavigation.jsx";
+import WizardNavigation from "./WizardNavigation.jsx";
 
-const STYLE_OPTIONS = [
+// Ngũ Hành - Five Elements với màu sắc phong thủy Việt Nam
+const NGU_HANH_OPTIONS = [
   {
     value: "Không",
-    description:
-      "Không chọn phong cách cụ thể, để AI tự do sáng tạo dựa trên các yêu cầu khác của bạn.",
-    icon: "➖",
-  },
-  {
-    value: "Hiện đại",
-    description:
-      "Đường nét gọn gàng, nhiều kính, phối màu trung tính nhấn kim loại ánh vàng.",
+    element: "auto",
+    desc: "Để AI tự chọn màu phù hợp",
+    colors: ["#888888"],
+    colorDesc: "Tự động",
     icon: "✨",
   },
   {
-    value: "Tân cổ điển",
-    description:
-      "Mặt tiền cân đối, phào chỉ tinh tế, điểm xuyết hoa văn mềm mại sang trọng.",
-    icon: "🏛️",
+    value: "Kim",
+    element: "metal",
+    desc: "Trắng, bạc, xám, vàng kim",
+    colors: ["#FFFFFF", "#C0C0C0", "#FFD700", "#E8E8E8"],
+    colorDesc: "Trắng tinh khôi, bạc ánh kim, xám thanh lịch",
+    icon: "🪙",
   },
   {
-    value: "Scandinavian",
-    description:
-      "Không gian sáng, gỗ tự nhiên và bảng màu trung tính mang lại sự ấm áp.",
-    icon: "🌲",
+    value: "Mộc",
+    element: "wood",
+    desc: "Xanh lá, xanh lục, ngọc bích",
+    colors: ["#228B22", "#32CD32", "#90EE90", "#006400"],
+    colorDesc: "Xanh lá tươi mát, xanh ngọc hài hòa",
+    icon: "🌿",
   },
   {
-    value: "Resort nhiệt đới",
-    description:
-      "Nhiều mảng xanh, chất liệu gần gũi tạo cảm giác nghỉ dưỡng thư thái.",
-    icon: "🌴",
+    value: "Thủy",
+    element: "water",
+    desc: "Đen, xanh dương, xanh navy",
+    colors: ["#000080", "#4169E1", "#87CEEB", "#1E3A5F"],
+    colorDesc: "Xanh nước biển sâu, đen huyền bí",
+    icon: "💧",
   },
   {
-    value: "Sang trọng đẳng cấp",
-    description:
-      "Vật liệu cao cấp, ánh sáng nghệ thuật, tạo dấu ấn khác biệt cho mặt tiền.",
-    icon: "💎",
+    value: "Hỏa",
+    element: "fire",
+    desc: "Đỏ, cam, hồng, tím",
+    colors: ["#DC143C", "#FF6347", "#FF69B4", "#8B008B"],
+    colorDesc: "Đỏ rực rỡ, cam ấm áp, hồng tươi tắn",
+    icon: "🔥",
   },
   {
-    value: "Tối giản đương đại",
-    description:
-      "Tối ưu các mảng phẳng, ít chi tiết, nhấn mạnh khối kiến trúc hiện đại.",
-    icon: "🧊",
+    value: "Thổ",
+    element: "earth",
+    desc: "Vàng, nâu, be, đất nung",
+    colors: ["#DAA520", "#8B4513", "#D2B48C", "#CD853F"],
+    colorDesc: "Vàng đất, nâu gỗ ấm, be tự nhiên",
+    icon: "🏔️",
   },
 ];
 
@@ -51,140 +58,113 @@ function SelectRequirementsStep({
   onBack,
   onNext,
   loading = false,
-  stylePlan,
   apiMessage = "",
 }) {
-  const handleFieldChange = (field) => (event) => {
-    onChange({ ...requirements, [field]: event.target.value });
+  const handleElementSelect = (option) => {
+    onChange({
+      ...requirements,
+      style: option.value,
+      element: option.element,
+      colorPalette: option.colorDesc,
+      colors: option.colors,
+    });
   };
 
+  const selectedOption = NGU_HANH_OPTIONS.find(
+    (opt) => opt.value === requirements.style
+  );
+
   return (
-    <div>
-      {loading ? (
-        <div className="wizard-progress" role="status" aria-live="assertive">
-          <span className="wizard-progress__spinner" aria-hidden="true" />
-          <div className="wizard-progress__text">
-            <strong>AI đang phân tích yêu cầu của bạn...</strong>
-            <span>Bước 2/4 – Thông tin chi tiết giúp gợi ý chính xác hơn.</span>
+    <div className="wizard-card animate-slide-up">
+      {loading && (
+        <div className="loading-card">
+          <div className="loading-card__spinner" />
+          <div className="loading-card__text">
+            <div className="loading-card__title">Đang xử lý...</div>
+            <div className="loading-card__subtitle">Bước 2/3 – Chuẩn bị tạo thiết kế</div>
           </div>
         </div>
-      ) : null}
+      )}
 
+      {/* Header */}
+      <div className="wizard-card__header">
+        <span className="wizard-card__step-badge">Bước 2 / 3</span>
+        <h2 className="wizard-card__title">Chọn mệnh Ngũ Hành</h2>
+        <p className="wizard-card__subtitle">
+          Chọn mệnh phong thủy để AI gợi ý màu sơn phù hợp cho ngôi nhà của bạn
+        </p>
+      </div>
+
+      {/* Element Selector */}
       <div className="wizard-card__section">
-        <div style={{ textAlign: "center", marginBottom: "28px" }}>
-          <div style={{ fontSize: "42px", letterSpacing: "0.2em", opacity: 0.6 }}>BƯỚC 02</div>
-          <h2 className="wizard-card__title">Chọn yêu cầu thiết kế mong muốn</h2>
-          <p className="wizard-card__subtitle">
-            Hãy đánh dấu phong cách phù hợp và mô tả chi tiết bạn muốn AI ưu tiên khi tạo phương án.
-          </p>
-        </div>
-
-        <div className="info-grid">
-          {STYLE_OPTIONS.map((option) => {
+        <div className="element-grid">
+          {NGU_HANH_OPTIONS.map((option) => {
             const isActive = option.value === requirements.style;
             return (
               <button
                 key={option.value}
                 type="button"
-                onClick={() => onChange({ ...requirements, style: option.value })}
-                className={`info-card ${isActive ? "info-card--active" : ""}`.trim()}
-                style={{ textAlign: "left", cursor: "pointer" }}
+                onClick={() => handleElementSelect(option)}
+                className={`element-card${isActive ? " element-card--active" : ""}`}
+                disabled={loading}
               >
-                <div
-                  style={{
-                    width: "44px",
-                    height: "44px",
-                    borderRadius: "12px",
-                    display: "grid",
-                    placeItems: "center",
-                    fontWeight: 600,
-                    fontSize: "1.2rem",
-                    background: isActive
-                      ? "linear-gradient(135deg, #ffbd4a, #ff8f1f)"
-                      : "rgba(40, 45, 70, 0.65)",
-                    color: isActive ? "#1a1320" : "#f5f6ff",
-                    marginBottom: "14px",
-                  }}
-                  aria-hidden="true"
-                >
-                  {option.icon}
+                <div className="element-card__icon">{option.icon}</div>
+                <div className="element-card__name">{option.value}</div>
+                <div className="element-card__colors">
+                  {option.colors.map((color, i) => (
+                    <span
+                      key={i}
+                      className="element-card__color"
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
                 </div>
-                <h3 style={{ margin: 0, color: "rgba(248,250,255,0.95)" }}>{option.value}</h3>
-                <p
-                  style={{
-                    marginTop: "8px",
-                    fontSize: "0.88rem",
-                    color: isActive ? "rgba(255, 249, 237, 0.85)" : "rgba(226, 233, 255, 0.85)",
-                  }}
-                >
-                  {option.description}
-                </p>
+                <div className="element-card__desc">{option.desc}</div>
+                {isActive && (
+                  <div className="element-card__check">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20,6 9,17 4,12" />
+                    </svg>
+                  </div>
+                )}
               </button>
             );
           })}
         </div>
       </div>
 
-      <div className="wizard-card__section">
-        <div className="timeline-card">
-          <h4>Tinh chỉnh yêu cầu chi tiết</h4>
-          <label style={{ display: "block", marginBottom: "18px" }}>
-            <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
-              Bảng màu mong muốn
-            </span>
-            <textarea
-              className="textarea-text"
-              rows={3}
-              value={requirements.colorPalette}
-              onChange={handleFieldChange("colorPalette")}
-              placeholder="Ví dụ: trắng kem chủ đạo, nhấn vàng champagne, ốp gỗ walnut."
-            />
-          </label>
-          <label style={{ display: "block", marginBottom: "18px" }}>
-            <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
-              Vật liệu & trang trí mong muốn
-            </span>
-            <textarea
-              className="textarea-text"
-              rows={3}
-              value={requirements.decorItems}
-              onChange={handleFieldChange("decorItems")}
-              placeholder="Ví dụ: lam gỗ dọc, đèn hắt khe, ban công cây xanh."
-            />
-          </label>
-          <label>
-            <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
-              Ghi chú thêm cho AI
-            </span>
-            <textarea
-              className="textarea-text"
-              rows={3}
-              value={requirements.aiSuggestions}
-              onChange={handleFieldChange("aiSuggestions")}
-              placeholder="Ví dụ: ưu tiên ban công xanh, sử dụng ánh sáng ấm vào buổi tối."
-            />
-          </label>
-        </div>
-      </div>
-
-      {stylePlan ? (
+      {/* Selected Info */}
+      {selectedOption && selectedOption.value !== "Không" && (
         <div className="wizard-card__section">
-          <div className="timeline-card">
-            <h4>Kế hoạch gợi ý từ AI</h4>
-            <p style={{ lineHeight: 1.7, color: "rgba(226,233,255,0.85)" }}>{stylePlan}</p>
+          <div className="element-info">
+            <div className="element-info__header">
+              <span className="element-info__icon">{selectedOption.icon}</span>
+              <div>
+                <h4 className="element-info__title">Mệnh {selectedOption.value}</h4>
+                <p className="element-info__subtitle">Màu sắc hợp phong thủy</p>
+              </div>
+            </div>
+            <div className="element-info__palette">
+              {selectedOption.colors.map((color, i) => (
+                <div key={i} className="element-info__swatch">
+                  <span style={{ backgroundColor: color }} />
+                </div>
+              ))}
+            </div>
+            <p className="element-info__desc">{selectedOption.colorDesc}</p>
           </div>
         </div>
-      ) : null}
+      )}
 
-      <div className="alert info" style={{ marginTop: "18px" }} role="status" aria-live="polite">
-        {apiMessage ||
-          "Chọn phong cách và mô tả càng kỹ càng giúp AI hiểu rõ hơn về mong muốn của bạn."}
-      </div>
+      {apiMessage && (
+        <div className="alert alert--info">{apiMessage}</div>
+      )}
 
       <WizardNavigation
         onBack={onBack}
         onNext={onNext}
-        disableNext={loading}
+        disableNext={!requirements.style || loading}
+        nextLabel="Tải ảnh nhà & Tạo thiết kế"
         nextLoading={loading}
       />
     </div>
