@@ -804,8 +804,451 @@ router.delete(
     const result = await pool.request()
       .input("Id", sql.Int, id)
       .query("DELETE FROM RegionalLibrary WHERE Id = @Id");
-      
+
     res.ok({ deleted: result.rowsAffected[0] });
+  })
+);
+
+// ============================================
+// PAINT BRANDS MANAGEMENT (Mix & Match Feature)
+// ============================================
+
+/**
+ * 13) Lấy danh sách thương hiệu sơn
+ * GET /api/admin/paint-brands
+ */
+router.get(
+  "/paint-brands",
+  asyncHandler(async (req, res) => {
+    const pool = await getPool();
+    const result = await pool.request().query(`
+      SELECT * FROM PaintBrands
+      ORDER BY DisplayOrder, BrandName
+    `);
+
+    res.ok({ items: result.recordset || [] });
+  })
+);
+
+/**
+ * 14) Thêm thương hiệu sơn mới
+ * POST /api/admin/paint-brands
+ * Body (FormData): brandName, description, websiteUrl, displayOrder, logo (file)
+ */
+router.post(
+  "/paint-brands",
+  upload.single("logo"),
+  asyncHandler(async (req, res) => {
+    const { brandName, description, websiteUrl, displayOrder = 0 } = req.body;
+
+    if (!brandName || !brandName.trim()) {
+      return res.status(400).json({
+        ok: false,
+        message: "Tên thương hiệu không được để trống"
+      });
+    }
+
+    const pool = await getPool();
+
+    // Kiểm tra trùng tên
+    const checkExist = await pool.request()
+      .input("BrandName", sql.NVarChar(100), brandName.trim())
+      .query("SELECT Id FROM PaintBrands WHERE BrandName = @BrandName");
+
+    if (checkExist.recordset.length > 0) {
+      return res.status(400).json({
+        ok: false,
+        message: "Thương hiệu này đã tồn tại"
+      });
+    }
+
+    // Upload logo (nếu có)
+    let logoUrl = null;
+    if (req.file) {
+      const cloudRes = await uploadBufferToCloudinary(req.file.buffer, 'exterior_ai/brands');
+      logoUrl = cloudRes.secure_url;
+    }
+
+    // Thêm vào database
+    const result = await pool.request()
+      .input("BrandName", sql.NVarChar(100), brandName.trim())
+      .input("BrandLogoUrl", sql.NVarChar(500), logoUrl)
+      .input("Description", sql.NVarChar(sql.MAX), description || null)
+      .input("WebsiteUrl", sql.NVarChar(500), websiteUrl || null)
+      .input("DisplayOrder", sql.Int, parseInt(displayOrder) || 0)
+      .query(`
+        INSERT INTO PaintBrands (BrandName, BrandLogoUrl, Description, WebsiteUrl, DisplayOrder)
+        OUTPUT INSERTED.*
+        VALUES (@BrandName, @BrandLogoUrl, @Description, @WebsiteUrl, @DisplayOrder)
+      `);
+
+    res.ok({
+      message: "Đã thêm thương hiệu sơn thành công",
+      item: result.recordset[0]
+    });
+  })
+);
+
+/**
+ * 15) Cập nhật thương hiệu sơn
+ * PUT /api/admin/paint-brands/:id
+ */
+router.put(
+  "/paint-brands/:id",
+  upload.single("logo"),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { brandName, description, websiteUrl, displayOrder, isActive } = req.body;
+
+    const pool = await getPool();
+
+    // Kiểm tra tồn tại
+    const checkResult = await pool.request()
+      .input("Id", sql.Int, id)
+      .query("SELECT * FROM PaintBrands WHERE Id = @Id");
+
+    if (!checkResult.recordset || checkResult.recordset.length === 0) {
+      return res.status(404).json({ ok: false, message: "Không tìm thấy thương hiệu" });
+    }
+
+    const existing = checkResult.recordset[0];
+
+    // Kiểm tra trùng tên (nếu đổi tên)
+    if (brandName && brandName.trim() !== existing.BrandName) {
+      const checkDuplicate = await pool.request()
+        .input("BrandName", sql.NVarChar(100), brandName.trim())
+        .input("Id", sql.Int, id)
+        .query("SELECT Id FROM PaintBrands WHERE BrandName = @BrandName AND Id != @Id");
+
+      if (checkDuplicate.recordset.length > 0) {
+        return res.status(400).json({
+          ok: false,
+          message: "Tên thương hiệu đã tồn tại"
+        });
+      }
+    }
+
+    // Upload logo mới (nếu có)
+    let logoUrl = existing.BrandLogoUrl;
+    if (req.file) {
+      const cloudRes = await uploadBufferToCloudinary(req.file.buffer, 'exterior_ai/brands');
+      logoUrl = cloudRes.secure_url;
+    }
+
+    // Cập nhật
+    await pool.request()
+      .input("Id", sql.Int, id)
+      .input("BrandName", sql.NVarChar(100), brandName?.trim() || existing.BrandName)
+      .input("BrandLogoUrl", sql.NVarChar(500), logoUrl)
+      .input("Description", sql.NVarChar(sql.MAX), description !== undefined ? description : existing.Description)
+      .input("WebsiteUrl", sql.NVarChar(500), websiteUrl !== undefined ? websiteUrl : existing.WebsiteUrl)
+      .input("DisplayOrder", sql.Int, displayOrder !== undefined ? parseInt(displayOrder) : existing.DisplayOrder)
+      .input("IsActive", sql.Bit, isActive !== undefined ? (isActive === 'true' || isActive === true ? 1 : 0) : existing.IsActive)
+      .query(`
+        UPDATE PaintBrands
+        SET BrandName = @BrandName,
+            BrandLogoUrl = @BrandLogoUrl,
+            Description = @Description,
+            WebsiteUrl = @WebsiteUrl,
+            DisplayOrder = @DisplayOrder,
+            IsActive = @IsActive,
+            UpdatedAt = SYSDATETIME()
+        WHERE Id = @Id
+      `);
+
+    // Lấy lại thông tin đã cập nhật
+    const updatedResult = await pool.request()
+      .input("Id", sql.Int, id)
+      .query("SELECT * FROM PaintBrands WHERE Id = @Id");
+
+    res.ok({
+      message: "Đã cập nhật thương hiệu thành công",
+      item: updatedResult.recordset[0]
+    });
+  })
+);
+
+/**
+ * 16) Xóa thương hiệu sơn
+ * DELETE /api/admin/paint-brands/:id
+ * Note: Sẽ xóa CASCADE tất cả màu sơn của thương hiệu này
+ */
+router.delete(
+  "/paint-brands/:id",
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const pool = await getPool();
+
+    // Kiểm tra số lượng màu sơn của brand này
+    const colorCount = await pool.request()
+      .input("BrandId", sql.Int, id)
+      .query("SELECT COUNT(*) AS count FROM PaintColors WHERE BrandId = @BrandId");
+
+    const count = colorCount.recordset[0]?.count || 0;
+
+    // Xóa brand (sẽ CASCADE xóa tất cả colors)
+    const result = await pool.request()
+      .input("Id", sql.Int, id)
+      .query("DELETE FROM PaintBrands WHERE Id = @Id");
+
+    res.ok({
+      deleted: result.rowsAffected[0],
+      message: count > 0
+        ? `Đã xóa thương hiệu và ${count} màu sơn liên quan`
+        : "Đã xóa thương hiệu"
+    });
+  })
+);
+
+// ============================================
+// PAINT COLORS MANAGEMENT (Mix & Match Feature)
+// ============================================
+
+/**
+ * 17) Lấy danh sách màu sơn (có filter)
+ * GET /api/admin/paint-colors?brandId=&componentType=
+ */
+router.get(
+  "/paint-colors",
+  asyncHandler(async (req, res) => {
+    const { brandId, componentType } = req.query;
+    const pool = await getPool();
+
+    let query = `
+      SELECT c.*, b.BrandName
+      FROM PaintColors c
+      INNER JOIN PaintBrands b ON c.BrandId = b.Id
+      WHERE 1=1
+    `;
+
+    const request = pool.request();
+
+    if (brandId) {
+      query += " AND c.BrandId = @BrandId";
+      request.input("BrandId", sql.Int, parseInt(brandId));
+    }
+
+    if (componentType) {
+      query += " AND c.ComponentType = @ComponentType";
+      request.input("ComponentType", sql.NVarChar(50), componentType);
+    }
+
+    query += " ORDER BY b.BrandName, c.ColorName";
+
+    const result = await request.query(query);
+
+    res.ok({ items: result.recordset || [] });
+  })
+);
+
+/**
+ * 18) Thêm màu sơn mới
+ * POST /api/admin/paint-colors
+ * Body (FormData): brandId, colorName, colorCode, hexCode, componentType, description, swatch (file)
+ */
+router.post(
+  "/paint-colors",
+  upload.single("swatch"),
+  asyncHandler(async (req, res) => {
+    const { brandId, colorName, colorCode, hexCode, componentType, description } = req.body;
+
+    // Validation
+    if (!brandId || !colorName || !colorCode || !hexCode || !componentType) {
+      return res.status(400).json({
+        ok: false,
+        message: "Thiếu thông tin bắt buộc (brandId, colorName, colorCode, hexCode, componentType)"
+      });
+    }
+
+    // Validate HEX code format
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hexCode)) {
+      return res.status(400).json({
+        ok: false,
+        message: "Mã HEX không hợp lệ (phải có dạng #RRGGBB, VD: #FFFFFF)"
+      });
+    }
+
+    // Validate component type
+    const validTypes = ['wall', 'roof', 'column', 'all'];
+    if (!validTypes.includes(componentType)) {
+      return res.status(400).json({
+        ok: false,
+        message: `ComponentType phải là một trong: ${validTypes.join(', ')}`
+      });
+    }
+
+    const pool = await getPool();
+
+    // Kiểm tra brand có tồn tại không
+    const brandCheck = await pool.request()
+      .input("BrandId", sql.Int, parseInt(brandId))
+      .query("SELECT Id FROM PaintBrands WHERE Id = @BrandId");
+
+    if (brandCheck.recordset.length === 0) {
+      return res.status(400).json({
+        ok: false,
+        message: "Thương hiệu không tồn tại"
+      });
+    }
+
+    // Upload swatch image (nếu có)
+    let imageUrl = null;
+    if (req.file) {
+      const cloudRes = await uploadBufferToCloudinary(req.file.buffer, 'exterior_ai/colors');
+      imageUrl = cloudRes.secure_url;
+    }
+
+    // Thêm vào database
+    const result = await pool.request()
+      .input("BrandId", sql.Int, parseInt(brandId))
+      .input("ColorName", sql.NVarChar(200), colorName.trim())
+      .input("ColorCode", sql.NVarChar(50), colorCode.trim())
+      .input("HexCode", sql.NVarChar(7), hexCode.toUpperCase())
+      .input("ComponentType", sql.NVarChar(50), componentType)
+      .input("ImageUrl", sql.NVarChar(500), imageUrl)
+      .input("Description", sql.NVarChar(sql.MAX), description || null)
+      .query(`
+        INSERT INTO PaintColors (BrandId, ColorName, ColorCode, HexCode, ComponentType, ImageUrl, Description)
+        OUTPUT INSERTED.*
+        VALUES (@BrandId, @ColorName, @ColorCode, @HexCode, @ComponentType, @ImageUrl, @Description)
+      `);
+
+    res.ok({
+      message: "Đã thêm màu sơn thành công",
+      item: result.recordset[0]
+    });
+  })
+);
+
+/**
+ * 19) Cập nhật màu sơn
+ * PUT /api/admin/paint-colors/:id
+ */
+router.put(
+  "/paint-colors/:id",
+  upload.single("swatch"),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { brandId, colorName, colorCode, hexCode, componentType, description, isActive } = req.body;
+
+    const pool = await getPool();
+
+    // Kiểm tra tồn tại
+    const checkResult = await pool.request()
+      .input("Id", sql.Int, id)
+      .query("SELECT * FROM PaintColors WHERE Id = @Id");
+
+    if (!checkResult.recordset || checkResult.recordset.length === 0) {
+      return res.status(404).json({ ok: false, message: "Không tìm thấy màu sơn" });
+    }
+
+    const existing = checkResult.recordset[0];
+
+    // Validate HEX code (nếu có thay đổi)
+    if (hexCode && !/^#[0-9A-Fa-f]{6}$/.test(hexCode)) {
+      return res.status(400).json({
+        ok: false,
+        message: "Mã HEX không hợp lệ"
+      });
+    }
+
+    // Validate component type (nếu có thay đổi)
+    const validTypes = ['wall', 'roof', 'column', 'all'];
+    if (componentType && !validTypes.includes(componentType)) {
+      return res.status(400).json({
+        ok: false,
+        message: `ComponentType phải là một trong: ${validTypes.join(', ')}`
+      });
+    }
+
+    // Kiểm tra brand (nếu đổi brand)
+    if (brandId && parseInt(brandId) !== existing.BrandId) {
+      const brandCheck = await pool.request()
+        .input("BrandId", sql.Int, parseInt(brandId))
+        .query("SELECT Id FROM PaintBrands WHERE Id = @BrandId");
+
+      if (brandCheck.recordset.length === 0) {
+        return res.status(400).json({
+          ok: false,
+          message: "Thương hiệu không tồn tại"
+        });
+      }
+    }
+
+    // Upload swatch mới (nếu có)
+    let imageUrl = existing.ImageUrl;
+    if (req.file) {
+      const cloudRes = await uploadBufferToCloudinary(req.file.buffer, 'exterior_ai/colors');
+      imageUrl = cloudRes.secure_url;
+    }
+
+    // Cập nhật
+    await pool.request()
+      .input("Id", sql.Int, id)
+      .input("BrandId", sql.Int, brandId ? parseInt(brandId) : existing.BrandId)
+      .input("ColorName", sql.NVarChar(200), colorName?.trim() || existing.ColorName)
+      .input("ColorCode", sql.NVarChar(50), colorCode?.trim() || existing.ColorCode)
+      .input("HexCode", sql.NVarChar(7), hexCode ? hexCode.toUpperCase() : existing.HexCode)
+      .input("ComponentType", sql.NVarChar(50), componentType || existing.ComponentType)
+      .input("ImageUrl", sql.NVarChar(500), imageUrl)
+      .input("Description", sql.NVarChar(sql.MAX), description !== undefined ? description : existing.Description)
+      .input("IsActive", sql.Bit, isActive !== undefined ? (isActive === 'true' || isActive === true ? 1 : 0) : existing.IsActive)
+      .query(`
+        UPDATE PaintColors
+        SET BrandId = @BrandId,
+            ColorName = @ColorName,
+            ColorCode = @ColorCode,
+            HexCode = @HexCode,
+            ComponentType = @ComponentType,
+            ImageUrl = @ImageUrl,
+            Description = @Description,
+            IsActive = @IsActive,
+            UpdatedAt = SYSDATETIME()
+        WHERE Id = @Id
+      `);
+
+    // Lấy lại thông tin đã cập nhật
+    const updatedResult = await pool.request()
+      .input("Id", sql.Int, id)
+      .query("SELECT * FROM PaintColors WHERE Id = @Id");
+
+    res.ok({
+      message: "Đã cập nhật màu sơn thành công",
+      item: updatedResult.recordset[0]
+    });
+  })
+);
+
+/**
+ * 20) Xóa màu sơn
+ * DELETE /api/admin/paint-colors/:id
+ * Note: Không thể xóa nếu màu đang được dùng trong MixMatchProjects (ON DELETE NO ACTION)
+ */
+router.delete(
+  "/paint-colors/:id",
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const pool = await getPool();
+
+    try {
+      const result = await pool.request()
+        .input("Id", sql.Int, id)
+        .query("DELETE FROM PaintColors WHERE Id = @Id");
+
+      res.ok({
+        deleted: result.rowsAffected[0],
+        message: "Đã xóa màu sơn thành công"
+      });
+    } catch (err) {
+      // Nếu lỗi foreign key constraint (màu đang được dùng)
+      if (err.message.includes('REFERENCE') || err.message.includes('FK_MixMatch')) {
+        return res.status(400).json({
+          ok: false,
+          message: "Không thể xóa màu sơn này vì đang được sử dụng trong các dự án Mix & Match"
+        });
+      }
+      throw err;
+    }
   })
 );
 
