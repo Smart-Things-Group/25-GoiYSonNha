@@ -8,6 +8,7 @@ import SelectRequirementsStep from "./components/SelectRequirementsStep.jsx";
 import UploadHouseStep from "./components/UploadHouseStep.jsx";
 import UploadSampleStep from "./components/UploadSampleStep.jsx";
 import ProfilePage from "./components/ProfilePage.jsx";
+import MixMatchPage from "./components/MixMatchPage.jsx";
 import ToastList from "./components/ToastList.jsx";
 import { getHistories } from "./api/wizard";
 import { loginUser, registerUser } from "./api/auth";
@@ -347,7 +348,8 @@ useEffect(() => {
 
   const navigationItems = useMemo(() => {
     const items = [
-      { id: "wizard", label: "Quy trình", icon: "compass" },
+      { id: "wizard", label: "Mệnh Ngũ Hành", icon: "compass" },
+      { id: "mixmatch", label: "Mix & Match", icon: "palette" },
       { id: "profile", label: "Hồ sơ", icon: "user" },
     ];
     if (user?.role === "admin") {
@@ -462,6 +464,20 @@ useEffect(() => {
     setAuthNotice("");
     setAuthPrefillEmail("");
   };
+
+  // Tự động đăng xuất khi token hết hạn (nhận sự kiện từ API helpers)
+  useEffect(() => {
+    const onAuthExpired = () => {
+      pushToast({
+        variant: "error",
+        title: "Phiên đăng nhập hết hạn",
+        message: "Vui lòng đăng nhập lại để tiếp tục.",
+      });
+      handleLogout();
+    };
+    window.addEventListener("auth-expired", onAuthExpired);
+    return () => window.removeEventListener("auth-expired", onAuthExpired);
+  }, [handleLogout, pushToast]);
 
   let stepContent = null;
   if (currentStepId === "sample") {
@@ -732,6 +748,8 @@ useEffect(() => {
         <div className="app-stage">
           {activeView === "wizard" ? (
             stepContent
+          ) : activeView === "mixmatch" ? (
+            <MixMatchPage user={user} pushToast={pushToast} />
           ) : activeView === "history" ? (
             <HistoryViewer
               entries={visibleHistory}

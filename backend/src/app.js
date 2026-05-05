@@ -1,8 +1,11 @@
 // 📁 src/app.js
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
-require("dotenv").config();
+
+// Load env from backend/.env no matter the working directory
+require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 const { testDb } = require("./db");
 const wizardRoutes = require("./routes/wizard");
@@ -11,6 +14,7 @@ const usersRoutes = require("./routes/users");
 const adminRoutes = require("./routes/admin");
 const designRoutes = require("./routes/designs");
 const colorRoutes = require("./routes/colors");
+const mixmatchRoutes = require("./routes/mixmatch");
 //const libraryRoutes = require("./routes/library");
 
 // 🧩 middlewares
@@ -42,6 +46,9 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", wizardRoutes);
+
+// ✅ Mix & Match routes (sử dụng multer, đặt trước fileUpload middleware)
+app.use("/api/mixmatch", mixmatchRoutes);
 
 // ✅ Route admin phải được đặt TRƯỚC global fileUpload middleware
 // vì admin routes sử dụng multer cho file upload (multer và express-fileupload conflict)

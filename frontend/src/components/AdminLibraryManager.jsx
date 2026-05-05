@@ -85,6 +85,17 @@ function AdminLibraryManager({ token }) {
     e.preventDefault();
     setLoading(true);
 
+    // Thông báo ngay khi bấm lưu để người dùng biết đang xử lý
+    const progressId = pushToast({
+      id: "library-progress",
+      variant: "info",
+      title: editingId ? "Đang cập nhật" : "Đang thêm mới",
+      message: editingId
+        ? "Đang cập nhật mẫu nhà, vui lòng chờ..."
+        : "Đang thêm mẫu nhà vào thư viện, vui lòng chờ...",
+      duration: 6000,
+    });
+
     try {
       const data = new FormData();
       if (file) {

@@ -1,11 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { fetchMixMatchHistory } from "../api/mixmatch";
+import BeforeAfterSlider from "./BeforeAfterSlider";
 
-function ProfilePage({ user, historyEntries = [], draft, onDeleteHistory }) {
-  const { requirements = {}, sampleImage = null, houseImage = null } = draft || {};
+function ProfilePage({ user, historyEntries = [], onDeleteHistory }) {
   const [expandedId, setExpandedId] = useState(null);
+  const [mixmatchHistory, setMixmatchHistory] = useState([]);
 
-  const hasDraftDetails = Boolean(sampleImage || houseImage) ||
-    Boolean(requirements.colorPalette || requirements.decorItems || requirements.aiSuggestions || requirements.style);
+  useEffect(() => {
+    if (user?.token) {
+      fetchMixMatchHistory(user.token)
+        .then((res) => {
+          if (res.ok) setMixmatchHistory(res.items || []);
+        })
+        .catch((err) => console.error("Load mixmatch history:", err));
+    }
+  }, [user?.token]);
 
   const sortedHistory = useMemo(() => {
     return [...historyEntries].sort((a, b) => {
@@ -40,53 +49,17 @@ function ProfilePage({ user, historyEntries = [], draft, onDeleteHistory }) {
       <div className="profile-stats">
         <div className="profile-stat">
           <span className="profile-stat__value">{sortedHistory.length}</span>
-          <span className="profile-stat__label">Dự án đã lưu</span>
+          <span className="profile-stat__label">Ngũ Hành</span>
         </div>
         <div className="profile-stat">
-          <span className="profile-stat__value">{hasDraftDetails ? "1" : "0"}</span>
-          <span className="profile-stat__label">Bản nháp</span>
+          <span className="profile-stat__value">{mixmatchHistory.length}</span>
+          <span className="profile-stat__label">Mix & Match</span>
+        </div>
+        <div className="profile-stat">
+          <span className="profile-stat__value">{sortedHistory.length + mixmatchHistory.length}</span>
+          <span className="profile-stat__label">Tổng dự án</span>
         </div>
       </div>
-
-      {/* Current Draft */}
-      {hasDraftDetails && (
-        <div className="profile-section">
-          <div className="profile-section__header">
-            <h2 className="profile-section__title">Dự án đang thực hiện</h2>
-            <span className="tag tag--primary">Đang tiến hành</span>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "var(--space-4)" }}>
-            <div>
-              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>Phong cách</div>
-              <div style={{ fontWeight: 500 }}>{requirements.style || "Chưa chọn"}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>Bảng màu</div>
-              <div>{requirements.colorPalette || "Chưa nhập"}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>Chi tiết</div>
-              <div>{requirements.decorItems || "Chưa nhập"}</div>
-            </div>
-          </div>
-          {(sampleImage || houseImage) && (
-            <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-4)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--color-border-light)" }}>
-              {sampleImage && (
-                <div>
-                  <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", marginBottom: "var(--space-2)" }}>Ảnh mẫu</div>
-                  <img src={sampleImage.preview || sampleImage.dataUrl} alt="Ảnh mẫu" style={{ width: "120px", borderRadius: "var(--radius-lg)" }} />
-                </div>
-              )}
-              {houseImage && (
-                <div>
-                  <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", marginBottom: "var(--space-2)" }}>Ảnh hiện trạng</div>
-                  <img src={houseImage.preview || houseImage.dataUrl} alt="Ảnh hiện trạng" style={{ width: "120px", borderRadius: "var(--radius-lg)" }} />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* History */}
       <div className="profile-section">
@@ -115,11 +88,25 @@ function ProfilePage({ user, historyEntries = [], draft, onDeleteHistory }) {
                     <div>Chi tiết: {entry.decorItems || "—"}</div>
                   </div>
 
-                  {entry.outputImageUrl && (
-                    <div className="history-card__images">
-                      <img src={entry.outputImageUrl} alt="Kết quả" />
-                    </div>
-                  )}
+                  {(() => {
+                    const houseSrc = entry.houseImageUrl || entry.houseImageDataUrl;
+                    const resultSrc = entry.outputImageUrl;
+                    if (houseSrc && resultSrc) {
+                      return (
+                        <div style={{ marginTop: "var(--space-3)" }}>
+                          <BeforeAfterSlider beforeSrc={houseSrc} afterSrc={resultSrc} />
+                        </div>
+                      );
+                    }
+                    if (resultSrc) {
+                      return (
+                        <div className="history-card__images">
+                          <img src={resultSrc} alt="Kết quả" />
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)" }}>
                     <button
@@ -159,6 +146,77 @@ function ProfilePage({ user, historyEntries = [], draft, onDeleteHistory }) {
         ) : (
           <div className="alert alert--info">
             Bạn chưa lưu dự án nào. Hoàn tất quy trình thiết kế để lưu lại.
+          </div>
+        )}
+      </div>
+
+      {/* MixMatch History */}
+      <div className="profile-section">
+        <div className="profile-section__header">
+          <h2 className="profile-section__title">Lịch sử Mix & Match</h2>
+          <span className="tag">{mixmatchHistory.length} dự án</span>
+        </div>
+
+        {mixmatchHistory.length > 0 ? (
+          <div className="history-grid">
+            {mixmatchHistory.map((item) => (
+              <div key={item.Id} className="history-card">
+                <div className="history-card__header">
+                  <span className="history-card__id">#{item.Id}</span>
+                  <span className="history-card__date">
+                    {new Date(item.CreatedAt).toLocaleString("vi-VN")}
+                  </span>
+                </div>
+
+                {/* Before/After Slider */}
+                {item.InputImageUrl && item.OutputImageUrl ? (
+                  <div style={{ marginTop: "var(--space-3)" }}>
+                    <BeforeAfterSlider beforeSrc={item.InputImageUrl} afterSrc={item.OutputImageUrl} />
+                  </div>
+                ) : item.InputImageUrl ? (
+                  <div className="history-card__images" style={{ marginTop: "var(--space-3)" }}>
+                    <img src={item.InputImageUrl} alt="Ảnh gốc" />
+                  </div>
+                ) : null}
+
+                {/* Details */}
+                <div className="history-card__details" style={{ marginTop: "var(--space-3)" }}>
+                  {item.RegionalStyleName && (
+                    <div>Vùng miền: <strong>{item.RegionalStyleName}</strong></div>
+                  )}
+                  <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginTop: "var(--space-2)" }}>
+                    {item.WallColorName && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "var(--text-sm)" }}>
+                        <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: item.WallHexCode, border: "1px solid rgba(0,0,0,0.15)", display: "inline-block" }} />
+                        Tường: {item.WallColorName}
+                      </span>
+                    )}
+                    {item.RoofColorName && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "var(--text-sm)" }}>
+                        <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: item.RoofHexCode, border: "1px solid rgba(0,0,0,0.15)", display: "inline-block" }} />
+                        Mái: {item.RoofColorName}
+                      </span>
+                    )}
+                    {item.ColumnColorName && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "var(--text-sm)" }}>
+                        <span style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: item.ColumnHexCode, border: "1px solid rgba(0,0,0,0.15)", display: "inline-block" }} />
+                        Cột: {item.ColumnColorName}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {item.Status === "failed" && (
+                  <div style={{ marginTop: "var(--space-2)", color: "var(--color-error)", fontSize: "var(--text-sm)" }}>
+                    AI generation thất bại
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="alert alert--info">
+            Bạn chưa có dự án Mix & Match nào.
           </div>
         )}
       </div>

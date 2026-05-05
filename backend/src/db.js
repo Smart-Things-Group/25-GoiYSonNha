@@ -1,6 +1,9 @@
 // backend/src/db.js
+const path = require("path");
 const sql = require("mssql");
-require("dotenv").config();
+
+// Always load env from backend/.env regardless of where the process is started
+require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 // Khớp chính xác với các biến trong file .env của bạn
 const base = {

@@ -28,10 +28,18 @@ const buildHeaders = (token = "") => {
 // Helper để xử lý lỗi 401 - Token hết hạn hoặc không hợp lệ
 const handleUnauthorized = (response, data) => {
   if (response.status === 401) {
-    const message = data?.message || "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+    const message =
+      data?.message ||
+      "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
     const error = new Error(message);
     error.status = 401;
     error.isUnauthorized = true;
+
+    // Phát sự kiện toàn cục để app có thể tự đăng xuất
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("auth-expired"));
+    }
+
     throw error;
   }
 };
