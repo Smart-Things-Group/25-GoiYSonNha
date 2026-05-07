@@ -9,7 +9,7 @@ const {
   generateImageFromThreeServices, // Tạo 3 ảnh từ 3 services
   generateImageFromImages, // Image-to-image
 } = require("../services/external-ai");
-const { getPool, sql } = require("../db");
+const Generation = require("../models/Generation");
 const auth = require("../middlewares/auth");
 
 // Khởi tạo Express Router
@@ -359,18 +359,14 @@ Hãy sử dụng ảnh nhà thô làm nền bắt buộc, bám sát cấu trúc 
       });
     }
 
-    // Lưu lịch sử vào DB (lưu ảnh đầu tiên có sẵn)
-    const pool = await getPool();
-    await pool.request()
-      .input("UserId", sql.BigInt, trxUserId)
-      .input("InputImageUrl", sql.NVarChar(500), upHouse.secure_url)
-      .input("OutputImageUrl", sql.NVarChar(500), outputImageUrl)
-      .input("Style", sql.NVarChar(200), ctx.requirements?.style || "")
-      .input("PromptUsed", sql.NVarChar(sql.MAX), prompt)
-      .query(`
-        INSERT INTO Generations (UserId, InputImageUrl, OutputImageUrl, Style, PromptUsed, CreatedAt)
-        VALUES (@UserId, @InputImageUrl, @OutputImageUrl, @Style, @PromptUsed, SYSDATETIME());
-      `);
+    // Lưu lịch sử vào DB
+    await Generation.create({
+      userId: trxUserId,
+      inputImageUrl: upHouse.secure_url,
+      outputImageUrl,
+      style: ctx.requirements?.style || "",
+      promptUsed: prompt,
+    });
 
     res.json({
       ok: true,

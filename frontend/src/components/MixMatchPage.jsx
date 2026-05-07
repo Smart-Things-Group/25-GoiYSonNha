@@ -11,9 +11,9 @@ import BeforeAfterSlider from "./BeforeAfterSlider";
 function RegionalStyleModal({ styles, selectedId, onSelect, onClose }) {
   const [filter, setFilter] = useState("all");
 
-  const regions = ["all", ...new Set(styles.map((s) => s.RegionName))];
+  const regions = ["all", ...new Set(styles.map((s) => s.regionName))];
 
-  const filtered = filter === "all" ? styles : styles.filter((s) => s.RegionName === filter);
+  const filtered = filter === "all" ? styles : styles.filter((s) => s.regionName === filter);
 
   return (
     <div
@@ -74,14 +74,14 @@ function RegionalStyleModal({ styles, selectedId, onSelect, onClose }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
             {filtered.map((style) => (
               <button
-                key={style.Id}
+                key={style.id}
                 onClick={() => {
-                  onSelect(style.Id);
+                  onSelect(style.id);
                   onClose();
                 }}
                 style={{
                   padding: 0,
-                  border: selectedId === style.Id ? "3px solid var(--color-brand-primary)" : "1px solid var(--color-border-light)",
+                  border: selectedId === style.id ? "3px solid var(--color-brand-primary)" : "1px solid var(--color-border-light)",
                   borderRadius: 12,
                   background: "var(--color-bg-primary)",
                   cursor: "pointer",
@@ -90,18 +90,18 @@ function RegionalStyleModal({ styles, selectedId, onSelect, onClose }) {
                   textAlign: "left",
                 }}
               >
-                {style.ImageUrl && (
+                {style.imageUrl && (
                   <img
-                    src={style.ImageUrl}
-                    alt={style.RegionName}
+                    src={style.imageUrl}
+                    alt={style.regionName}
                     style={{ width: "100%", height: 140, objectFit: "cover" }}
                   />
                 )}
                 <div style={{ padding: "10px 12px" }}>
-                  <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--color-text-primary)" }}>{style.RegionName}</div>
-                  {style.Description && (
+                  <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--color-text-primary)" }}>{style.regionName}</div>
+                  {style.description && (
                     <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: 4, lineHeight: 1.4 }}>
-                      {style.Description.substring(0, 60)}{style.Description.length > 60 ? "..." : ""}
+                      {style.description.substring(0, 60)}{style.description.length > 60 ? "..." : ""}
                     </div>
                   )}
                 </div>
@@ -203,19 +203,19 @@ export default function MixMatchPage({ user, pushToast }) {
   const updateDisplayColors = () => {
     const componentType = tabToComponentType[activeTab];
     let filtered = allColors.filter(
-      (c) => c.ComponentType === componentType || c.ComponentType === "all"
+      (c) => c.componentType === componentType || c.componentType === "all"
     );
 
     if (brandFilter) {
-      filtered = filtered.filter((c) => c.BrandId == brandFilter);
+      filtered = filtered.filter((c) => c.brandId == brandFilter);
     }
 
     if (colorSearch.trim()) {
       const term = colorSearch.toLowerCase().trim();
       filtered = filtered.filter(
         (c) =>
-          c.ColorName?.toLowerCase().includes(term) ||
-          c.HexCode?.toLowerCase().includes(term)
+          c.colorName?.toLowerCase().includes(term) ||
+          c.hexCode?.toLowerCase().includes(term)
       );
     }
 
@@ -251,13 +251,13 @@ export default function MixMatchPage({ user, pushToast }) {
   const handleColorClick = (color) => {
     setSelectedColors((prev) => ({
       ...prev,
-      [activeTab]: color.Id,
+      [activeTab]: color.id,
     }));
 
     pushToast?.({
       variant: "info",
       title: `Đã chọn màu cho ${componentTabs.find((t) => t.id === activeTab)?.label}`,
-      message: `${color.BrandName} - ${color.ColorName} (${color.HexCode})`,
+      message: `${color.brandName} - ${color.colorName} (${color.hexCode})`,
     });
   };
 
@@ -318,11 +318,11 @@ export default function MixMatchPage({ user, pushToast }) {
   const getSelectedColorForTab = (tabId) => {
     const colorId = selectedColors[tabId];
     if (!colorId) return null;
-    return allColors.find((c) => c.Id == colorId);
+    return allColors.find((c) => c.id == colorId);
   };
 
   // Get selected style object
-  const selectedStyle = regionalStyles.find((s) => s.Id === selectedStyleId);
+  const selectedStyle = regionalStyles.find((s) => s.id === selectedStyleId);
 
   return (
     <div
@@ -475,15 +475,15 @@ export default function MixMatchPage({ user, pushToast }) {
           >
             {selectedStyle ? (
               <>
-                {selectedStyle.ImageUrl && (
+                {selectedStyle.imageUrl && (
                   <img
-                    src={selectedStyle.ImageUrl}
-                    alt={selectedStyle.RegionName}
+                    src={selectedStyle.imageUrl}
+                    alt={selectedStyle.regionName}
                     style={{ width: "100%", maxHeight: 120, objectFit: "cover", borderRadius: 8 }}
                   />
                 )}
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>{selectedStyle.RegionName}</div>
+                  <div style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>{selectedStyle.regionName}</div>
                 </div>
                 <button
                   className="btn btn-secondary"
@@ -547,7 +547,7 @@ export default function MixMatchPage({ user, pushToast }) {
                       width: 12,
                       height: 12,
                       borderRadius: "50%",
-                      backgroundColor: selectedColor.HexCode,
+                      backgroundColor: selectedColor.hexCode,
                       border: "2px solid " + (isActive ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.2)"),
                       display: "inline-block",
                       marginLeft: 2,
@@ -593,8 +593,8 @@ export default function MixMatchPage({ user, pushToast }) {
           >
             <option value="">Tất cả thương hiệu</option>
             {brands.map((brand) => (
-              <option key={brand.Id} value={brand.Id}>
-                {brand.BrandName}
+              <option key={brand.id} value={brand.id}>
+                {brand.brandName}
               </option>
             ))}
           </select>
@@ -627,20 +627,20 @@ export default function MixMatchPage({ user, pushToast }) {
           }}
         >
           {displayColors.map((color) => {
-            const isSelected = selectedColors[activeTab] === color.Id;
+            const isSelected = selectedColors[activeTab] === color.id;
             return (
               <button
-                key={color.Id}
+                key={color.id}
                 onClick={() => handleColorClick(color)}
                 disabled={loading}
-                title={`${color.BrandName} - ${color.ColorName}\n${color.HexCode}`}
+                title={`${color.brandName} - ${color.colorName}\n${color.hexCode}`}
                 style={{
                   width: "100%",
                   aspectRatio: "1/1",
                   padding: 0,
                   border: isSelected ? "3px solid var(--color-brand-primary)" : "1px solid rgba(0,0,0,0.12)",
                   borderRadius: 6,
-                  backgroundColor: color.HexCode,
+                  backgroundColor: color.hexCode,
                   cursor: "pointer",
                   transition: "all 0.15s",
                   position: "relative",
@@ -669,10 +669,10 @@ export default function MixMatchPage({ user, pushToast }) {
             style={{ margin: "12px 0 0", padding: "8px 12px", fontSize: "0.85rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}
           >
             <span>
-              <strong>Đã chọn:</strong> {getSelectedColorForTab(activeTab)?.BrandName} -{" "}
-              {getSelectedColorForTab(activeTab)?.ColorName} (
-              <span style={{ color: getSelectedColorForTab(activeTab)?.HexCode, fontWeight: "bold" }}>
-                {getSelectedColorForTab(activeTab)?.HexCode}
+              <strong>Đã chọn:</strong> {getSelectedColorForTab(activeTab)?.brandName} -{" "}
+              {getSelectedColorForTab(activeTab)?.colorName} (
+              <span style={{ color: getSelectedColorForTab(activeTab)?.hexCode, fontWeight: "bold" }}>
+                {getSelectedColorForTab(activeTab)?.hexCode}
               </span>
               )
             </span>
@@ -737,13 +737,13 @@ export default function MixMatchPage({ user, pushToast }) {
                       width: 16,
                       height: 16,
                       borderRadius: 4,
-                      backgroundColor: color.HexCode,
+                      backgroundColor: color.hexCode,
                       border: "1px solid rgba(0,0,0,0.15)",
                       display: "inline-block",
                     }}
                   />
                   <span style={{ fontWeight: 600, color: "var(--color-text-primary)", fontSize: "0.8rem" }}>
-                    {color.ColorName}
+                    {color.colorName}
                   </span>
                 </span>
               ) : (

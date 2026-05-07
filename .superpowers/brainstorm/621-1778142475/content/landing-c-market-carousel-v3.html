@@ -1,0 +1,149 @@
+<style>
+  .landing-frame { border-radius: 30px; overflow:hidden; border:1px solid rgba(15,23,42,.08); background:#fff; box-shadow:0 26px 90px rgba(15,23,42,.12); }
+  .landing-top { position:relative; min-height:660px; padding:24px 34px 34px; background: radial-gradient(circle at 15% 22%, rgba(20,184,166,.28), transparent 24%), radial-gradient(circle at 78% 18%, rgba(249,115,22,.24), transparent 26%), linear-gradient(135deg,#fff7ed 0%,#ecfeff 45%,#eff6ff 100%); overflow:hidden; }
+  .lp-nav { position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-radius:999px; background:rgba(255,255,255,.72); border:1px solid rgba(255,255,255,.9); backdrop-filter:blur(18px); box-shadow:0 12px 30px rgba(15,23,42,.06); }
+  .lp-logo { display:flex; align-items:center; gap:10px; font-weight:900; color:#0f172a; }
+  .lp-mark { width:38px; height:38px; border-radius:14px; display:grid; place-items:center; color:#fff; background:linear-gradient(135deg,#2563eb,#14b8a6); box-shadow:0 10px 22px rgba(37,99,235,.26); }
+  .lp-menu { display:flex; gap:18px; color:#475569; font-size:14px; font-weight:700; }
+  .lp-actions { display:flex; gap:10px; }
+  .lp-btn { border-radius:999px; padding:10px 16px; font-size:13px; font-weight:900; }
+  .lp-btn.primary { background:#f97316; color:#fff; box-shadow:0 12px 28px rgba(249,115,22,.24); }
+  .lp-btn.secondary { background:#fff; color:#2563eb; border:1px solid #dbeafe; }
+  .hero-grid { position:relative; z-index:1; display:grid; grid-template-columns:.9fr 1.1fr; gap:34px; align-items:center; padding:56px 8px 22px; }
+  .eyebrow { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:rgba(20,184,166,.12); color:#0f766e; font-weight:900; font-size:13px; margin-bottom:18px; }
+  .hero-copy h1 { margin:0; font-size:58px; line-height:.96; letter-spacing:-.065em; color:#172554; }
+  .hero-copy h1 span { color:#f97316; }
+  .hero-copy p { max-width:520px; margin:20px 0 26px; color:#475569; font-size:17px; line-height:1.7; }
+  .hero-cta { display:flex; gap:12px; align-items:center; margin-bottom:26px; }
+  .big-btn { padding:15px 22px; border-radius:18px; font-weight:950; font-size:15px; box-shadow:0 16px 35px rgba(15,23,42,.12); }
+  .big-btn.orange { background:#f97316; color:#fff; }
+  .big-btn.blue { background:#fff; color:#2563eb; border:1px solid #dbeafe; }
+  .trust-row { display:flex; gap:16px; flex-wrap:wrap; }
+  .trust-chip { display:flex; gap:8px; align-items:center; color:#334155; font-size:13px; font-weight:800; }
+  .visual-area { position:relative; min-height:470px; }
+  .before-after-showcase { position:absolute; right:0; top:0; width:630px; border-radius:34px; padding:14px; background:rgba(255,255,255,.74); border:1px solid rgba(255,255,255,.95); backdrop-filter:blur(18px); box-shadow:0 34px 90px rgba(15,23,42,.18); transform:rotate(1.2deg); }
+  .showcase-header { display:flex; justify-content:space-between; align-items:center; padding:6px 8px 14px; color:#0f172a; font-weight:900; font-size:14px; }
+  .showcase-tags { display:flex; gap:7px; }
+  .showcase-tags span { padding:5px 9px; border-radius:999px; font-size:11px; background:#eff6ff; color:#2563eb; }
+  .slider-frame { position:relative; height:330px; border-radius:26px; overflow:hidden; background:#e2e8f0; border:1px solid #e2e8f0; }
+  .half { position:absolute; inset:0; }
+  .raw { width:52%; overflow:hidden; z-index:2; border-right:3px solid #fff; }
+  .finished { background:linear-gradient(135deg,#dbeafe 0%,#fff7ed 100%); }
+  .construction, .rendered { position:absolute; inset:0; }
+  .construction { background:linear-gradient(180deg,#bfdbfe,#f8fafc); }
+  .construction:before { content:""; position:absolute; left:76px; bottom:44px; width:250px; height:230px; background:#b45309; clip-path:polygon(10% 28%,48% 8%,87% 24%,87% 100%,10% 100%); opacity:.75; }
+  .construction:after { content:""; position:absolute; left:106px; bottom:64px; width:198px; height:165px; background:repeating-linear-gradient(90deg,#92400e 0 18px,#c2410c 18px 22px); border-radius:10px; }
+  .rendered:before { content:""; position:absolute; right:70px; bottom:44px; width:395px; height:230px; background:#f5f0df; clip-path:polygon(0 24%,36% 5%,100% 20%,100% 100%,0 100%); box-shadow:0 24px 60px rgba(15,23,42,.12); }
+  .rendered:after { content:""; position:absolute; right:92px; bottom:65px; width:345px; height:145px; background:linear-gradient(90deg,#fef3c7 0 25%,#f8fafc 25% 50%,#d9b98f 50% 75%,#f8fafc 75%); border-radius:14px; }
+  .roof { position:absolute; right:70px; bottom:248px; width:395px; height:46px; background:#8b5e34; transform:skewX(-16deg); border-radius:8px; }
+  .slider-handle { position:absolute; z-index:4; top:0; bottom:0; left:52%; width:3px; background:#fff; }
+  .slider-knob { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:48px; height:48px; border-radius:999px; display:grid; place-items:center; background:#2563eb; color:#fff; border:5px solid #fff; box-shadow:0 12px 28px rgba(37,99,235,.35); font-weight:900; }
+  .label { position:absolute; top:16px; z-index:5; padding:7px 10px; border-radius:10px; color:#fff; font-size:12px; font-weight:900; background:rgba(15,23,42,.75); }
+  .label.before { left:16px; } .label.after { right:16px; background:rgba(249,115,22,.86); }
+  .section { padding:58px 42px; }
+  .section.alt { background:linear-gradient(180deg,#fff,#f8fafc); }
+  .section-head { display:flex; justify-content:space-between; gap:24px; align-items:flex-end; margin-bottom:26px; }
+  .section-kicker { color:#f97316; font-weight:950; font-size:13px; text-transform:uppercase; letter-spacing:.12em; }
+  .section-title { margin:6px 0 0; color:#0f172a; font-size:36px; line-height:1.05; letter-spacing:-.04em; }
+  .section-desc { color:#64748b; max-width:500px; line-height:1.65; margin:0; }
+  .compare-wrap { border-radius:28px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 24px 70px rgba(15,23,42,.08); background:#fff; }
+  .compare-table { display:grid; grid-template-columns:1.2fr repeat(4,1fr); }
+  .cell { padding:18px 16px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; color:#334155; font-size:14px; line-height:1.45; min-height:52px; display:flex; align-items:center; }
+  .cell.head { background:#f8fafc; font-weight:950; color:#0f172a; }
+  .cell.ours { background:#fff7ed; color:#9a3412; font-weight:950; }
+  .cell.feature { font-weight:850; color:#172554; }
+  .check { color:#16a34a; font-weight:950; }
+  .warn { color:#f97316; font-weight:950; }
+  .no { color:#94a3b8; font-weight:950; }
+  .carousel-shell { position:relative; overflow:hidden; }
+  .carousel-track { display:flex; gap:18px; padding:4px 0 10px; }
+  .home-slide { min-width:265px; border-radius:28px; overflow:hidden; background:#fff; border:1px solid #e2e8f0; box-shadow:0 18px 45px rgba(15,23,42,.08); }
+  .home-img { height:178px; position:relative; background:linear-gradient(135deg,#e0f2fe,#fff7ed); overflow:hidden; }
+  .home-img:before { content:""; position:absolute; left:44px; bottom:28px; width:180px; height:118px; background:var(--c); clip-path:polygon(50% 0,100% 42%,88% 42%,88% 100%,12% 100%,12% 42%,0 42%); }
+  .home-img:after { content:""; position:absolute; left:86px; bottom:28px; width:92px; height:62px; background:rgba(255,255,255,.8); border-radius:10px; }
+  .home-body { padding:16px; }
+  .home-body h3 { margin:0 0 6px; color:#0f172a; font-size:17px; }
+  .home-body p { margin:0; color:#64748b; font-size:13px; line-height:1.5; }
+  .carousel-controls { display:flex; gap:8px; align-items:center; }
+  .circle-btn { width:42px; height:42px; display:grid; place-items:center; border-radius:999px; background:#fff; border:1px solid #dbeafe; color:#2563eb; font-weight:950; box-shadow:0 12px 28px rgba(37,99,235,.1); }
+  .features { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .feature-box { border-radius:22px; padding:20px; background:#fff; border:1px solid #e2e8f0; box-shadow:0 18px 45px rgba(15,23,42,.06); }
+  .feature-icon { width:44px; height:44px; display:grid; place-items:center; border-radius:16px; background:#eff6ff; margin-bottom:12px; font-size:22px; }
+  .feature-box h3 { margin:0 0 8px; color:#0f172a; font-size:18px; }
+  .feature-box p { margin:0; color:#64748b; line-height:1.55; font-size:14px; }
+</style>
+
+<h2>Mockup C v3: Thêm bảng so sánh + carousel nhà đẹp Việt Nam</h2>
+<p class="subtitle">Phiên bản này giữ hero phong thủy thân thiện, nhưng thêm phần nội dung thuyết phục: vì sao chọn web của bạn so với các nền tảng khác và một carousel giới thiệu mẫu nhà đẹp ở Việt Nam.</p>
+
+<div class="landing-frame">
+  <section class="landing-top">
+    <div class="lp-nav">
+      <div class="lp-logo"><div class="lp-mark">⌂</div><span>Paint Studio AI</span></div>
+      <div class="lp-menu"><span>Mệnh Ngũ Hành</span><span>Mix & Match</span><span>So sánh</span><span>Nhà đẹp VN</span></div>
+      <div class="lp-actions"><span class="lp-btn secondary">Đăng nhập</span><span class="lp-btn primary">Đăng ký</span></div>
+    </div>
+
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">✨ Tư vấn màu sơn ngoại thất cho nhà Việt</div>
+        <h1>Chọn màu <span>hợp mệnh</span>, phối nhà hợp gu</h1>
+        <p>Paint Studio AI kết hợp phong thủy Mệnh Ngũ Hành, bảng màu sơn thật và công nghệ AI để giúp khách hàng xem trước diện mạo ngôi nhà trước khi thi công.</p>
+        <div class="hero-cta"><span class="big-btn orange">Đăng ký trải nghiệm</span><span class="big-btn blue">Đăng nhập</span></div>
+        <div class="trust-row"><span class="trust-chip">🎨 Bảng màu thật</span><span class="trust-chip">🏠 Kéo xem trước/sau</span><span class="trust-chip">🇻🇳 Hợp gu nhà Việt</span></div>
+      </div>
+
+      <div class="visual-area">
+        <div class="before-after-showcase">
+          <div class="showcase-header"><span>Demo phối màu AI</span><div class="showcase-tags"><span>Gốc</span><span>Thiết kế</span><span>Kéo slider</span></div></div>
+          <div class="slider-frame">
+            <div class="half finished"><div class="rendered"></div><div class="roof"></div></div>
+            <div class="half raw"><div class="construction"></div></div>
+            <span class="label before">Gốc</span><span class="label after">Thiết kế</span>
+            <div class="slider-handle"><div class="slider-knob">↔</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="section-head">
+      <div><div class="section-kicker">Điểm khác biệt</div><h2 class="section-title">So sánh Paint Studio AI với các giải pháp khác</h2></div>
+      <p class="section-desc">Bảng này giúp khách hàng hiểu nhanh lợi thế: không chỉ xem mẫu nhà, mà còn cá nhân hóa theo mệnh, màu sơn thật và ảnh nhà của chính họ.</p>
+    </div>
+    <div class="compare-wrap">
+      <div class="compare-table">
+        <div class="cell head">Tiêu chí</div><div class="cell head ours">Paint Studio AI</div><div class="cell head">Website mẫu nhà VN</div><div class="cell head">App thiết kế quốc tế</div><div class="cell head">Tư vấn truyền thống</div>
+        <div class="cell feature">Tư vấn Mệnh Ngũ Hành</div><div class="cell ours"><span class="check">Có</span></div><div class="cell"><span class="no">Hiếm</span></div><div class="cell"><span class="no">Không phù hợp VN</span></div><div class="cell"><span class="warn">Tùy chuyên gia</span></div>
+        <div class="cell feature">Thử màu trên ảnh nhà thật</div><div class="cell ours"><span class="check">Có AI preview</span></div><div class="cell"><span class="no">Không</span></div><div class="cell"><span class="warn">Có nhưng phức tạp</span></div><div class="cell"><span class="no">Không trực quan</span></div>
+        <div class="cell feature">Bảng màu sơn thương hiệu</div><div class="cell ours"><span class="check">Có MongoDB</span></div><div class="cell"><span class="warn">Thông tin rời rạc</span></div><div class="cell"><span class="no">Không theo hãng VN</span></div><div class="cell"><span class="warn">Cần catalogue</span></div>
+        <div class="cell feature">Phù hợp nhà ở Việt Nam</div><div class="cell ours"><span class="check">Tập trung nhà Việt</span></div><div class="cell"><span class="check">Có</span></div><div class="cell"><span class="warn">Thiên về quốc tế</span></div><div class="cell"><span class="check">Có</span></div>
+        <div class="cell feature">Tốc độ có gợi ý</div><div class="cell ours"><span class="check">Vài bước</span></div><div class="cell"><span class="warn">Tự tìm kiếm</span></div><div class="cell"><span class="warn">Cần học công cụ</span></div><div class="cell"><span class="no">Mất thời gian hẹn</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div><div class="section-kicker">Cảm hứng thiết kế</div><h2 class="section-title">Carousel nhà đẹp ở Việt Nam</h2></div>
+      <div class="carousel-controls"><div class="circle-btn">←</div><div class="circle-btn">→</div></div>
+    </div>
+    <div class="carousel-shell">
+      <div class="carousel-track">
+        <div class="home-slide"><div class="home-img" style="--c:#14b8a6"></div><div class="home-body"><h3>Nhà phố Sài Gòn</h3><p>Tông xanh ngọc mát mắt, phù hợp mặt tiền đô thị.</p></div></div>
+        <div class="home-slide"><div class="home-img" style="--c:#f97316"></div><div class="home-body"><h3>Nhà mái Thái miền Tây</h3><p>Cam đất ấm áp, tạo cảm giác gần gũi và nổi bật.</p></div></div>
+        <div class="home-slide"><div class="home-img" style="--c:#2563eb"></div><div class="home-body"><h3>Biệt thự Đà Lạt</h3><p>Xanh dương trầm kết hợp trắng, sang trọng và yên bình.</p></div></div>
+        <div class="home-slide"><div class="home-img" style="--c:#84cc16"></div><div class="home-body"><h3>Nhà vườn miền Bắc</h3><p>Xanh olive nhẹ, hài hòa với sân vườn và cây cối.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="features">
+      <div class="feature-box"><div class="feature-icon">🧭</div><h3>Mệnh Ngũ Hành</h3><p>Tư vấn màu sắc theo mệnh, sở thích và phong cách nhà.</p></div>
+      <div class="feature-box"><div class="feature-icon">🎨</div><h3>Mix & Match</h3><p>Kéo xem trước/sau, chọn màu từ MongoDB và tạo thiết kế.</p></div>
+      <div class="feature-box"><div class="feature-icon">👤</div><h3>Hồ sơ</h3><p>Lưu các thiết kế đã tạo để xem lại và so sánh.</p></div>
+    </div>
+  </section>
+</div>

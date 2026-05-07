@@ -32,8 +32,8 @@ router.get("/:generationId", auth, asyncHandler(async (req, res) => {
   //   return res.status(403).json({ ok: false, message: "Bạn không có quyền xem bản phối này" });
   // }
 
-  res.ok({ 
-    config: JSON.parse(design.ConfigJson) 
+  res.ok({
+    config: design.configJson
   });
 }));
 

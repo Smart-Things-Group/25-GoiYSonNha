@@ -173,14 +173,14 @@ function AdminLibraryManager({ token }) {
 
   // Xử lý chỉnh sửa
   const handleEdit = (item) => {
-    setEditingId(item.Id);
+    setEditingId(item.id);
     setFormData({
-      regionName: item.RegionName || "Bắc",
-      styleData: item.StyleData || "",
-      description: item.Description || "",
+      regionName: item.regionName || "Bắc",
+      styleData: item.styleData || "",
+      description: item.description || "",
     });
     setFile(null);
-    setPreviewUrl(item.ImageUrl || null);
+    setPreviewUrl(item.imageUrl || null);
     setIsFormOpen(true);
   };
 
@@ -343,21 +343,21 @@ function AdminLibraryManager({ token }) {
           >
             {items.map((item) => (
               <div
-                key={item.Id}
+                key={item.id}
                 className="admin-card"
                 style={{ padding: "16px" }}
               >
                 <div style={{ marginBottom: "12px" }}>
                   <span className="admin-badge admin-badge--accent">
-                    {item.RegionName}
+                    {item.regionName}
                   </span>
                 </div>
 
-                {item.ImageUrl && (
+                {item.imageUrl && (
                   <div style={{ marginBottom: "12px" }}>
                     <img
-                      src={item.ImageUrl}
-                      alt={item.Description || "Mẫu nhà"}
+                      src={item.imageUrl}
+                      alt={item.description || "Mẫu nhà"}
                       style={{
                         width: "100%",
                         height: "200px",
@@ -387,11 +387,11 @@ function AdminLibraryManager({ token }) {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {item.StyleData || "Chưa có mô tả"}
+                    {item.styleData || "Chưa có mô tả"}
                   </p>
                 </div>
 
-                {item.Description && (
+                {item.description && (
                   <div style={{ marginBottom: "12px" }}>
                     <p
                       style={{
@@ -408,7 +408,7 @@ function AdminLibraryManager({ token }) {
                         color: "rgba(255,255,255,0.6)",
                       }}
                     >
-                      {item.Description}
+                      {item.description}
                     </p>
                   </div>
                 )}
@@ -420,7 +420,7 @@ function AdminLibraryManager({ token }) {
                     marginTop: "12px",
                   }}
                 >
-                  Tạo lúc: {new Date(item.CreatedAt).toLocaleString("vi-VN")}
+                  Tạo lúc: {new Date(item.createdAt).toLocaleString("vi-VN")}
                 </p>
 
                 <div
@@ -442,7 +442,7 @@ function AdminLibraryManager({ token }) {
                   <button
                     type="button"
                     className="admin-button admin-button--danger"
-                    onClick={() => handleDelete(item.Id)}
+                    onClick={() => handleDelete(item.id)}
                     disabled={loading}
                     style={{ flex: 1 }}
                   >

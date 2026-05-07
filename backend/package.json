@@ -22,13 +22,14 @@
     "express-fileupload": "^1.5.2",
     "form-data": "^4.0.0",
     "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.6.1",
     "morgan": "^1.10.1",
-    "mssql": "^11.0.1",
     "multer": "^2.0.2",
     "pdfkit": "^0.17.2",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "mssql": "^12.5.2",
     "nodemon": "^3.1.10"
   },
   "keywords": [],

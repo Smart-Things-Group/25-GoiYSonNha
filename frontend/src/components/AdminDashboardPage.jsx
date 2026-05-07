@@ -19,22 +19,22 @@ const buildFakeStatus = (id, index) => {
 
 function normalizeGenerations(items = []) {
   return items.map((item, index) => ({
-    id: item.Id,
-    style: item.Style || "Ngoại thất hiện đại",
-    createdByName: item.Email || "Ẩn danh",
-    createdAt: item.CreatedAt,
-    aiSuggestions: item.InputDesc || item.Description || "",
-    status: buildFakeStatus(item.Id, index),
+    id: item.id,
+    style: item.style || "Ngoại thất hiện đại",
+    createdByName: item.email || "Ẩn danh",
+    createdAt: item.createdAt,
+    aiSuggestions: item.inputDesc || item.description || "",
+    status: buildFakeStatus(item.id, index),
   }));
 }
 
 function normalizeUserStats(items = []) {
   return items.map((item) => ({
-    id: item.UserId || item.Id,
-    email: item.Email,
-    role: item.Role,
-    generationCount: item.GenerationCount || 0,
-    lastGenerationAt: item.LastGenerationAt,
+    id: item.userId || item.id,
+    email: item.email,
+    role: item.role,
+    generationCount: item.generationCount || 0,
+    lastGenerationAt: item.lastGenerationAt,
   }));
 }
 

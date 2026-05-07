@@ -3,6 +3,7 @@ import "./App.css";
 import HistoryViewer from "./components/HistoryViewer.jsx";
 import LoginPage from "./components/LoginPage.jsx";
 import RegisterPage from "./components/RegisterPage.jsx";
+import LandingPage from "./components/LandingPage.jsx";
 import ResultStep from "./components/ResultStep.jsx";
 import SelectRequirementsStep from "./components/SelectRequirementsStep.jsx";
 import UploadHouseStep from "./components/UploadHouseStep.jsx";
@@ -240,7 +241,7 @@ function App() {
     }
   });
 
-  const [authMode, setAuthMode] = useState("login");
+  const [authMode, setAuthMode] = useState("landing");
   const [authNotice, setAuthNotice] = useState("");
   const [authPrefillEmail, setAuthPrefillEmail] = useState("");
   const [activeView, setActiveView] = useState("wizard");
@@ -460,7 +461,7 @@ useEffect(() => {
     resetWizard();
     setUser(null);
     setActiveView("wizard");
-    setAuthMode("login");
+    setAuthMode("landing");
     setAuthNotice("");
     setAuthPrefillEmail("");
   };
@@ -546,14 +547,26 @@ useEffect(() => {
         />
       );
     }
+
+    if (authMode === "login") {
+      return (
+        <LoginPage
+          onLogin={handleLogin}
+          onSwitchMode={handleSwitchAuthMode}
+          prefillEmail={authPrefillEmail}
+          notice={authNotice}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      );
+    }
+
     return (
-      <LoginPage
-        onLogin={handleLogin}
-        onSwitchMode={handleSwitchAuthMode}
-        prefillEmail={authPrefillEmail}
-        notice={authNotice}
+      <LandingPage
         theme={theme}
         onToggleTheme={toggleTheme}
+        onLoginClick={() => handleSwitchAuthMode("login")}
+        onRegisterClick={() => handleSwitchAuthMode("register")}
       />
     );
   }

@@ -1,9 +1,12 @@
+const { connectDB } = require("./db");
 const app = require("./app");
 const { ensureAdminAccount } = require("./services/adminSeeder");
 
 const PORT = process.env.PORT || 8000;
 
 async function bootstrap() {
+  await connectDB();
+
   try {
     await ensureAdminAccount();
   } catch (error) {
@@ -11,9 +14,8 @@ async function bootstrap() {
   }
 
   const server = app.listen(PORT, () => console.log("🚀 Server running on port", PORT));
-  
-  // Tăng timeout cho server (3 phút cho AI image generation)
-  server.timeout = 180000; // 180 seconds
+
+  server.timeout = 180000;
   server.keepAliveTimeout = 180000;
   server.headersTimeout = 185000;
 }

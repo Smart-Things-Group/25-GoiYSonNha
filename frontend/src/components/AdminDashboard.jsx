@@ -253,26 +253,26 @@ function AdminDashboard({
                 <div className="admin-table__body" role="rowgroup">
                   {selectedUserGenerations.map((item) => (
                     <div
-                      key={item.Id}
+                      key={item.id}
                       className="admin-table__row"
                       role="row"
                     >
                       <div className="admin-table__cell" role="cell">
                         <p className="admin-table__title">
-                          {item.Style || "Ngoại thất"}
+                          {item.style || "Ngoại thất"}
                         </p>
                         <p className="admin-table__muted">
-                          #{String(item.Id).slice(0, 8)}
+                          #{String(item.id).slice(0, 8)}
                         </p>
                       </div>
                       <div className="admin-table__cell" role="cell">
                         <p className="admin-table__value">
-                          {formatDateTime(item.CreatedAt)}
+                          {formatDateTime(item.createdAt)}
                         </p>
                       </div>
                       <div className="admin-table__cell" role="cell">
                         <p className="admin-table__muted">
-                          {item.InputDesc || item.Description || "Chưa có mô tả."}
+                          {item.inputDesc || item.description || "Chưa có mô tả."}
                         </p>
                       </div>
                       <div className="admin-table__cell admin-table__cell--action" role="cell">
@@ -280,7 +280,7 @@ function AdminDashboard({
                           type="button"
                           className="admin-button admin-button--danger"
                           onClick={() =>
-                            onDeleteGeneration && onDeleteGeneration(item.Id)
+                            onDeleteGeneration && onDeleteGeneration(item.id)
                           }
                         >
                           Xóa

@@ -1,0 +1,88 @@
+<style>
+  .hero-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 22px; }
+  .landing-card { border: 1px solid rgba(148,163,184,.35); border-radius: 22px; overflow: hidden; background: #fff; box-shadow: 0 20px 60px rgba(15,23,42,.08); cursor: pointer; transition: .2s ease; }
+  .landing-card:hover { transform: translateY(-3px); box-shadow: 0 26px 80px rgba(37,99,235,.16); }
+  .landing-card.selected { outline: 3px solid #2563eb; }
+  .preview { min-height: 290px; padding: 18px; position: relative; overflow: hidden; }
+  .preview-a { background: radial-gradient(circle at 70% 25%, rgba(251,146,60,.38), transparent 28%), linear-gradient(135deg, #0f172a 0%, #1d4ed8 58%, #f97316 100%); color: white; }
+  .preview-b { background: linear-gradient(180deg, #f8fafc 0%, #eef6ff 100%); color: #0f172a; }
+  .preview-c { background: radial-gradient(circle at 20% 20%, rgba(20,184,166,.25), transparent 24%), linear-gradient(135deg, #fff7ed, #e0f2fe); color: #172554; }
+  .mini-nav { display:flex; justify-content:space-between; align-items:center; font-size:11px; opacity:.9; margin-bottom:22px; }
+  .mini-logo { display:flex; gap:7px; align-items:center; font-weight:800; }
+  .logo-mark { width:24px; height:24px; border-radius:9px; background:rgba(255,255,255,.22); border:1px solid rgba(255,255,255,.35); }
+  .preview-b .logo-mark, .preview-c .logo-mark { background:linear-gradient(135deg,#2563eb,#14b8a6); }
+  .mini-links { display:flex; gap:10px; }
+  .hero-title { font-size:28px; line-height:1.04; font-weight:900; letter-spacing:-.04em; margin:0; }
+  .hero-sub { font-size:11px; line-height:1.55; opacity:.82; margin:10px 0 16px; max-width:210px; }
+  .hero-buttons { display:flex; gap:8px; }
+  .primary-pill { padding:8px 12px; border-radius:999px; background:#fff; color:#1d4ed8; font-size:10px; font-weight:800; }
+  .secondary-pill { padding:8px 12px; border-radius:999px; border:1px solid currentColor; font-size:10px; font-weight:700; }
+  .house-art { position:absolute; right:14px; bottom:14px; width:138px; height:94px; border-radius:18px; background:rgba(255,255,255,.18); backdrop-filter: blur(8px); border:1px solid rgba(255,255,255,.28); }
+  .house-roof { position:absolute; left:22px; top:18px; width:92px; height:54px; background:linear-gradient(135deg,#f97316,#fb923c); clip-path: polygon(50% 0,100% 45%,88% 45%,88% 100%,12% 100%,12% 45%,0 45%); }
+  .house-body { position:absolute; left:33px; top:54px; width:72px; height:30px; background:#e0f2fe; border-radius:4px; }
+  .swatches { position:absolute; left:18px; bottom:18px; display:flex; gap:6px; }
+  .swatches span { width:18px; height:18px; border-radius:999px; border:2px solid rgba(255,255,255,.8); }
+  .preview-b .primary-pill { background:#2563eb; color:#fff; }
+  .preview-b .secondary-pill, .preview-c .secondary-pill { color:#2563eb; }
+  .preview-b .house-art { background:#fff; border-color:#dbeafe; box-shadow:0 18px 45px rgba(37,99,235,.15); }
+  .preview-b .hero-title { color:#0f172a; }
+  .preview-c .primary-pill { background:#f97316; color:#fff; }
+  .preview-c .house-art { background:rgba(255,255,255,.72); border-color:#fed7aa; }
+  .card-info { padding: 16px 18px 18px; }
+  .card-info h3 { margin:0 0 6px; font-size:17px; }
+  .card-info p { margin:0; color:#64748b; font-size:13px; line-height:1.5; }
+  .badge { display:inline-flex; padding:4px 9px; border-radius:999px; background:#eff6ff; color:#2563eb; font-size:11px; font-weight:800; margin-bottom:10px; }
+</style>
+
+<h2>Chọn hướng thiết kế Landing Page</h2>
+<p class="subtitle">Mình đề xuất 3 phong cách cho trang đầu tiên khi khách chưa đăng nhập. Bạn có thể click chọn một hướng, hoặc nhắn muốn pha trộn các hướng.</p>
+
+<div class="hero-options cards">
+  <div class="landing-card card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="preview preview-a card-image">
+      <div class="mini-nav"><div class="mini-logo"><span class="logo-mark"></span>Paint Studio AI</div><div class="mini-links"><span>Giải pháp</span><span>Demo</span><span>Đăng nhập</span></div></div>
+      <p class="badge">Khuyến nghị</p>
+      <h3 class="hero-title">Biến ảnh ngôi nhà thành bản phối ngoại thất bằng AI</h3>
+      <p class="hero-sub">Trải nghiệm tư vấn Mệnh Ngũ Hành, bảng màu sơn thật và phối màu trực quan trong vài giây.</p>
+      <div class="hero-buttons"><span class="primary-pill">Bắt đầu miễn phí</span><span class="secondary-pill">Xem demo</span></div>
+      <div class="house-art"><div class="house-roof"></div><div class="house-body"></div></div>
+      <div class="swatches"><span style="background:#f97316"></span><span style="background:#2563eb"></span><span style="background:#14b8a6"></span></div>
+    </div>
+    <div class="card-info card-body">
+      <h3>A. Hoành tráng, giàu cảm xúc</h3>
+      <p>Hero lớn, gradient mạnh, mockup nhà nổi bật, phù hợp mục tiêu “thu hút tầm mắt khách hàng”.</p>
+    </div>
+  </div>
+
+  <div class="landing-card card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="preview preview-b card-image">
+      <div class="mini-nav"><div class="mini-logo"><span class="logo-mark"></span>Paint Studio</div><div class="mini-links"><span>Tính năng</span><span>Quy trình</span><span>Đăng ký</span></div></div>
+      <p class="badge">Sạch & chuyên nghiệp</p>
+      <h3 class="hero-title">Nền tảng tư vấn màu sơn ngoại thất thông minh</h3>
+      <p class="hero-sub">Giao diện sáng, đáng tin cậy, tập trung vào lợi ích và quy trình 3 bước.</p>
+      <div class="hero-buttons"><span class="primary-pill">Đăng nhập</span><span class="secondary-pill">Tạo tài khoản</span></div>
+      <div class="house-art"><div class="house-roof"></div><div class="house-body"></div></div>
+      <div class="swatches"><span style="background:#bfdbfe"></span><span style="background:#60a5fa"></span><span style="background:#1e3a8a"></span></div>
+    </div>
+    <div class="card-info card-body">
+      <h3>B. SaaS hiện đại</h3>
+      <p>Rõ ràng, dễ đọc, ít rủi ro nhưng cảm giác “wow” thấp hơn hướng A.</p>
+    </div>
+  </div>
+
+  <div class="landing-card card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="preview preview-c card-image">
+      <div class="mini-nav"><div class="mini-logo"><span class="logo-mark"></span>Paint Studio</div><div class="mini-links"><span>Ngũ Hành</span><span>Mix & Match</span><span>Hồ sơ</span></div></div>
+      <p class="badge">Gần gũi Việt Nam</p>
+      <h3 class="hero-title">Chọn màu hợp mệnh, phối nhà hợp gu</h3>
+      <p class="hero-sub">Nhấn mạnh yếu tố phong thủy, màu sơn thật và cảm giác gia đình Việt.</p>
+      <div class="hero-buttons"><span class="primary-pill">Khám phá ngay</span><span class="secondary-pill">Đăng ký</span></div>
+      <div class="house-art"><div class="house-roof"></div><div class="house-body"></div></div>
+      <div class="swatches"><span style="background:#14b8a6"></span><span style="background:#f97316"></span><span style="background:#fde68a"></span></div>
+    </div>
+    <div class="card-info card-body">
+      <h3>C. Phong thủy & thân thiện</h3>
+      <p>Hợp nội dung Mệnh Ngũ Hành, tạo cảm giác gần gũi nhưng ít “premium AI” hơn hướng A.</p>
+    </div>
+  </div>
+</div>

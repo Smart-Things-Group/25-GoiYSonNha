@@ -160,22 +160,22 @@ function ProfilePage({ user, historyEntries = [], onDeleteHistory }) {
         {mixmatchHistory.length > 0 ? (
           <div className="history-grid">
             {mixmatchHistory.map((item) => (
-              <div key={item.Id} className="history-card">
+              <div key={item.id} className="history-card">
                 <div className="history-card__header">
-                  <span className="history-card__id">#{item.Id}</span>
+                  <span className="history-card__id">#{item.id}</span>
                   <span className="history-card__date">
-                    {new Date(item.CreatedAt).toLocaleString("vi-VN")}
+                    {new Date(item.createdAt).toLocaleString("vi-VN")}
                   </span>
                 </div>
 
                 {/* Before/After Slider */}
-                {item.InputImageUrl && item.OutputImageUrl ? (
+                {item.inputImageUrl && item.outputImageUrl ? (
                   <div style={{ marginTop: "var(--space-3)" }}>
-                    <BeforeAfterSlider beforeSrc={item.InputImageUrl} afterSrc={item.OutputImageUrl} />
+                    <BeforeAfterSlider beforeSrc={item.inputImageUrl} afterSrc={item.outputImageUrl} />
                   </div>
-                ) : item.InputImageUrl ? (
+                ) : item.inputImageUrl ? (
                   <div className="history-card__images" style={{ marginTop: "var(--space-3)" }}>
-                    <img src={item.InputImageUrl} alt="Ảnh gốc" />
+                    <img src={item.inputImageUrl} alt="Ảnh gốc" />
                   </div>
                 ) : null}
 
@@ -206,7 +206,7 @@ function ProfilePage({ user, historyEntries = [], onDeleteHistory }) {
                   </div>
                 </div>
 
-                {item.Status === "failed" && (
+                {item.status === "failed" && (
                   <div style={{ marginTop: "var(--space-2)", color: "var(--color-error)", fontSize: "var(--text-sm)" }}>
                     AI generation thất bại
                   </div>

@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p docs/superpowers/specs)",
+      "Bash(npm uninstall *)",
+      "Bash(node scripts/migrate-to-mongo.js)",
+      "PowerShell(Get-Process -Name node -ErrorAction SilentlyContinue)",
+      "PowerShell(try { Invoke-RestMethod -Uri 'http://localhost:8000/api/mixmatch/paint-colors' -Method Get | ConvertTo-Json -Depth 5 } catch { if \\($_.Exception.Response\\) { $reader = New-Object System.IO.StreamReader\\($_.Exception.Response.GetResponseStream\\(\\)\\); $reader.ReadToEnd\\(\\) } else { $_.Exception.Message } })",
+      "PowerShell(try { Invoke-RestMethod -Uri 'http://localhost:8000/api/mixmatch/paint-brands' -Method Get | ConvertTo-Json -Depth 3 } catch { if \\($_.Exception.Response\\) { $reader = New-Object System.IO.StreamReader\\($_.Exception.Response.GetResponseStream\\(\\)\\); $reader.ReadToEnd\\(\\) } else { $_.Exception.Message } })",
+      "PowerShell(try { Invoke-RestMethod -Uri 'http://localhost:8000/api/mixmatch/regional-styles' -Method Get | ConvertTo-Json -Depth 3 } catch { if \\($_.Exception.Response\\) { $reader = New-Object System.IO.StreamReader\\($_.Exception.Response.GetResponseStream\\(\\)\\); $reader.ReadToEnd\\(\\) } else { $_.Exception.Message } })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri 'http://localhost:8000/api/mixmatch/paint-colors' -Method Get -UseBasicParsing; \"STATUS=$\\($r.StatusCode\\)\"; $r.Content } catch { \"ERROR=$\\($_.Exception.Message\\)\"; if \\($_.Exception.Response\\) { \"STATUS=$\\([int]$_.Exception.Response.StatusCode\\)\"; $stream = $_.Exception.Response.GetResponseStream\\(\\); if \\($stream\\) { $reader = New-Object System.IO.StreamReader\\($stream\\); $reader.ReadToEnd\\(\\) } } })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri 'http://localhost:8000/api/mixmatch/paint-colors' -Method Get -UseBasicParsing; \"STATUS=$\\($r.StatusCode\\)\"; $json = $r.Content | ConvertFrom-Json; \"OK=$\\($json.ok\\)\"; \"COUNT=$\\($json.items.Count\\)\"; if \\($json.items.Count -gt 0\\) { $json.items[0] | ConvertTo-Json -Depth 4 } } catch { \"ERROR=$\\($_.Exception.Message\\)\"; if \\($_.Exception.Response\\) { \"STATUS=$\\([int]$_.Exception.Response.StatusCode\\)\"; $stream = $_.Exception.Response.GetResponseStream\\(\\); if \\($stream\\) { $reader = New-Object System.IO.StreamReader\\($stream\\); $reader.ReadToEnd\\(\\) } } })",
+      "PowerShell(try { $json = Invoke-RestMethod -Uri 'http://localhost:8000/api/mixmatch/paint-colors?componentType=wall' -Method Get; \"wall/all COUNT=$\\($json.items.Count\\)\" } catch { \"ERROR=$\\($_.Exception.Message\\)\" })",
+      "PowerShell(try { $json = Invoke-RestMethod -Uri 'http://localhost:8000/api/mixmatch/paint-colors?componentType=roof' -Method Get; \"roof/all COUNT=$\\($json.items.Count\\)\" } catch { \"ERROR=$\\($_.Exception.Message\\)\" })",
+      "PowerShell(try { $json = Invoke-RestMethod -Uri 'http://localhost:8000/api/mixmatch/paint-colors?componentType=column' -Method Get; \"column/all COUNT=$\\($json.items.Count\\)\" } catch { \"ERROR=$\\($_.Exception.Message\\)\" })",
+      "Bash(\"C:/Users/Fugdin/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/scripts/start-server.sh\" --project-dir \"d:/TotNghiep_ptud/Project/NgoaiThat-AI\")",
+      "Bash(\"/c/Users/Fugdin/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/brainstorming/scripts/start-server.sh\" --project-dir \"/d/TotNghiep_ptud/Project/NgoaiThat-AI\")",
+      "WebFetch(domain:home-design.ai)",
+      "WebFetch(domain:homedesigns.ai)",
+      "PowerShell(npm run build)",
+      "PowerShell(npm --prefix frontend run build)",
+      "PowerShell(npm --prefix frontend run lint)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri 'http://localhost:5173' -UseBasicParsing -TimeoutSec 5; \"STATUS=$\\($r.StatusCode\\)\"; \"LENGTH=$\\($r.Content.Length\\)\" } catch { \"ERROR=$\\($_.Exception.Message\\)\" })",
+      "PowerShell(npm --prefix frontend exec eslint src/components/LandingPage.jsx)",
+      "PowerShell(npm --prefix frontend exec eslint -- frontend/src/components/LandingPage.jsx)",
+      "PowerShell(npm --prefix frontend run lint -- src/components/LandingPage.jsx)",
+      "PowerShell(npm --prefix frontend exec eslint -- --config eslint.config.js src/components/LandingPage.jsx)",
+      "PowerShell(npm --prefix frontend exec eslint -- --config frontend/eslint.config.js frontend/src/components/LandingPage.jsx)",
+      "PowerShell($response = Invoke-WebRequest -UseBasicParsing -Uri \"http://localhost:5173/\" -TimeoutSec 10; \"STATUS=$\\($response.StatusCode\\)\"; \"LENGTH=$\\($response.Content.Length\\)\")",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs"
+    ],
+    "additionalDirectories": [
+      "d:\\TotNghiep_ptud\\Project\\NgoaiThat-AI\\docs\\superpowers"
+    ]
+  }
+}

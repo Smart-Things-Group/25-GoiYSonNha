@@ -1,231 +1,149 @@
 const express = require("express");
 const multer = require("multer");
-const crypto = require("crypto");
 require("dotenv").config();
 const { uploadBufferToCloudinary } = require("../services/cloud");
 const { generateImageExternal } = require("../services/external-ai");
-const { getPool, sql } = require("../db");
+const RegionalLibrary = require("../models/RegionalLibrary");
+const PaintBrand = require("../models/PaintBrand");
+const PaintColor = require("../models/PaintColor");
+const MixMatchProject = require("../models/MixMatchProject");
 const auth = require("../middlewares/auth");
 
-// Khởi tạo Express Router
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-/**
- * 1️⃣ GET /api/mixmatch/regional-styles
- * Lấy danh sách phong cách vùng miền từ RegionalLibrary
- * PUBLIC - Không cần auth
- */
 router.get("/regional-styles", async (req, res) => {
   try {
-    const pool = await getPool();
-    const result = await pool.request().query(`
-      SELECT Id, RegionName, ImageUrl, Description, CreatedAt
-      FROM RegionalLibrary
-      ORDER BY CreatedAt DESC
-    `);
+    const raw = await RegionalLibrary.find()
+      .select("regionName imageUrl description createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json({
-      ok: true,
-      items: result.recordset || [],
-    });
+    const items = raw.map(item => ({ ...item, id: item._id }));
+
+    res.json({ ok: true, items });
   } catch (err) {
     console.error("[MixMatch] Get regional styles error:", err);
-    res.status(500).json({
-      ok: false,
-      message: "Lỗi lấy danh sách phong cách vùng miền",
-      detail: err.message,
-    });
+    res.status(500).json({ ok: false, message: "Lỗi lấy danh sách phong cách vùng miền", detail: err.message });
   }
 });
 
-/**
- * 2️⃣ GET /api/mixmatch/paint-colors?componentType=wall&brandId=1
- * Lấy danh sách màu sơn theo component type và brand (optional)
- * PUBLIC - Không cần auth
- */
 router.get("/paint-colors", async (req, res) => {
   try {
     const { componentType, brandId } = req.query;
-    const pool = await getPool();
 
-    let query = `
-      SELECT
-        c.Id, c.ColorName, c.ColorCode, c.HexCode, c.ComponentType,
-        c.ImageUrl, c.Description,
-        b.Id AS BrandId, b.BrandName, b.BrandLogoUrl
-      FROM PaintColors c
-      INNER JOIN PaintBrands b ON c.BrandId = b.Id
-      WHERE c.IsActive = 1 AND b.IsActive = 1
-    `;
+    const filter = { isActive: true };
 
-    const request = pool.request();
-
-    // Filter by component type (wall/roof/column)
-    // Note: componentType='wall' sẽ lấy cả màu 'wall' và 'all'
     if (componentType && componentType !== "all") {
-      query += " AND (c.ComponentType = @ComponentType OR c.ComponentType = 'all')";
-      request.input("ComponentType", sql.NVarChar(50), componentType);
+      filter.$or = [{ componentType }, { componentType: "all" }];
     }
-
-    // Filter by brand (optional)
     if (brandId) {
-      query += " AND c.BrandId = @BrandId";
-      request.input("BrandId", sql.Int, parseInt(brandId));
+      filter.brandId = brandId;
     }
 
-    query += " ORDER BY b.DisplayOrder, b.BrandName, c.ColorName";
+    const items = await PaintColor.find(filter)
+      .populate({
+        path: "brandId",
+        match: { isActive: true },
+        select: "brandName brandLogoUrl displayOrder",
+      })
+      .lean();
 
-    const result = await request.query(query);
+    const filtered = items
+      .filter((c) => c.brandId != null)
+      .map((c) => ({
+        id: c._id,
+        colorName: c.colorName,
+        colorCode: c.colorCode,
+        hexCode: c.hexCode,
+        componentType: c.componentType,
+        imageUrl: c.imageUrl,
+        description: c.description,
+        brandId: c.brandId._id,
+        brandName: c.brandId.brandName,
+        brandLogoUrl: c.brandId.brandLogoUrl,
+      }))
+      .sort((a, b) => a.brandName.localeCompare(b.brandName) || a.colorName.localeCompare(b.colorName));
 
-    res.json({
-      ok: true,
-      items: result.recordset || [],
-    });
+    res.json({ ok: true, items: filtered });
   } catch (err) {
     console.error("[MixMatch] Get paint colors error:", err);
-    res.status(500).json({
-      ok: false,
-      message: "Lỗi lấy danh sách màu sơn",
-      detail: err.message,
-    });
+    res.status(500).json({ ok: false, message: "Lỗi lấy danh sách màu sơn", detail: err.message });
   }
 });
 
-/**
- * 3️⃣ GET /api/mixmatch/paint-brands
- * Lấy danh sách thương hiệu sơn (để filter)
- * PUBLIC - Không cần auth
- */
 router.get("/paint-brands", async (req, res) => {
   try {
-    const pool = await getPool();
-    const result = await pool.request().query(`
-      SELECT Id, BrandName, BrandLogoUrl, Description
-      FROM PaintBrands
-      WHERE IsActive = 1
-      ORDER BY DisplayOrder, BrandName
-    `);
+    const raw = await PaintBrand.find({ isActive: true })
+      .select("brandName brandLogoUrl description")
+      .sort({ displayOrder: 1, brandName: 1 })
+      .lean();
 
-    res.json({
-      ok: true,
-      items: result.recordset || [],
-    });
+    const items = raw.map(item => ({ ...item, id: item._id }));
+
+    res.json({ ok: true, items });
   } catch (err) {
     console.error("[MixMatch] Get paint brands error:", err);
-    res.status(500).json({
-      ok: false,
-      message: "Lỗi lấy danh sách thương hiệu sơn",
-      detail: err.message,
-    });
+    res.status(500).json({ ok: false, message: "Lỗi lấy danh sách thương hiệu sơn", detail: err.message });
   }
 });
 
-/**
- * 4️⃣ POST /api/mixmatch/generate
- * Tạo ảnh với màu sơn tùy chỉnh
- * AUTHENTICATED - Cần token
- *
- * Body (FormData):
- * - house: File (ảnh nhà thô, required)
- * - regionalStyleId: number (optional)
- * - wallColorId: number (optional)
- * - roofColorId: number (optional)
- * - columnColorId: number (optional)
- * - customNotes: string (optional)
- */
 router.post("/generate", auth, upload.single("house"), async (req, res) => {
   try {
-    // Lấy UserId từ token
     const userId = req.user?.id || req.user?.userId;
     if (!userId) {
-      return res.status(401).json({
-        ok: false,
-        message: "Không thể xác định người dùng. Vui lòng đăng nhập lại.",
-      });
+      return res.status(401).json({ ok: false, message: "Không thể xác định người dùng. Vui lòng đăng nhập lại." });
     }
 
     const { regionalStyleId, wallColorId, roofColorId, columnColorId, customNotes } = req.body;
     const file = req.file;
 
-    // Validate: Phải có ảnh nhà thô
     if (!file) {
-      return res.status(400).json({
-        ok: false,
-        message: "Thiếu ảnh nhà thô. Vui lòng upload ảnh.",
-      });
+      return res.status(400).json({ ok: false, message: "Thiếu ảnh nhà thô. Vui lòng upload ảnh." });
     }
-
-    // Validate: Phải chọn ít nhất 1 màu
     if (!wallColorId && !roofColorId && !columnColorId) {
-      return res.status(400).json({
-        ok: false,
-        message: "Vui lòng chọn ít nhất 1 màu sơn cho tường, mái hoặc cột.",
-      });
+      return res.status(400).json({ ok: false, message: "Vui lòng chọn ít nhất 1 màu sơn cho tường, mái hoặc cột." });
     }
 
-    console.log("[MixMatch] Generate request:", {
-      userId,
-      regionalStyleId,
-      wallColorId,
-      roofColorId,
-      columnColorId,
-      fileSize: file.size,
-    });
+    console.log("[MixMatch] Generate request:", { userId, regionalStyleId, wallColorId, roofColorId, columnColorId, fileSize: file.size });
 
-    const pool = await getPool();
-
-    // Upload ảnh nhà thô lên Cloudinary
-    const houseUpload = await uploadBufferToCloudinary(
-      file.buffer,
-      "exterior_ai/mixmatch/inputs"
-    );
-
+    const houseUpload = await uploadBufferToCloudinary(file.buffer, "exterior_ai/mixmatch/inputs");
     console.log("[MixMatch] House image uploaded:", houseUpload.secure_url);
 
-    // Lấy thông tin các màu đã chọn
-    const colorIds = [wallColorId, roofColorId, columnColorId]
-      .filter((id) => id)
-      .map((id) => parseInt(id));
-
-    let wallColor = null;
-    let roofColor = null;
-    let columnColor = null;
+    const colorIds = [wallColorId, roofColorId, columnColorId].filter(Boolean);
+    let wallColor = null, roofColor = null, columnColor = null;
 
     if (colorIds.length > 0) {
-      const colorQuery = `
-        SELECT Id, ColorName, HexCode, ComponentType, ColorCode,
-               (SELECT BrandName FROM PaintBrands WHERE Id = BrandId) AS BrandName
-        FROM PaintColors
-        WHERE Id IN (${colorIds.join(",")})
-      `;
+      const colors = await PaintColor.find({ _id: { $in: colorIds } })
+        .populate("brandId", "brandName")
+        .lean();
 
-      const colorResult = await pool.request().query(colorQuery);
-      const colors = colorResult.recordset;
+      wallColor = colors.find((c) => String(c._id) === String(wallColorId));
+      roofColor = colors.find((c) => String(c._id) === String(roofColorId));
+      columnColor = colors.find((c) => String(c._id) === String(columnColorId));
 
-      wallColor = colors.find((c) => c.Id == wallColorId);
-      roofColor = colors.find((c) => c.Id == roofColorId);
-      columnColor = colors.find((c) => c.Id == columnColorId);
+      [wallColor, roofColor, columnColor].forEach((c) => {
+        if (c && c.brandId) {
+          c.BrandName = c.brandId.brandName;
+          c.ColorName = c.colorName;
+          c.HexCode = c.hexCode;
+          c.ColorCode = c.colorCode;
+        }
+      });
 
       console.log("[MixMatch] Selected colors:", {
-        wall: wallColor?.ColorName,
-        roof: roofColor?.ColorName,
-        column: columnColor?.ColorName,
+        wall: wallColor?.colorName,
+        roof: roofColor?.colorName,
+        column: columnColor?.colorName,
       });
     }
 
-    // Lấy thông tin phong cách vùng miền (nếu có)
     let regionalStyle = null;
     if (regionalStyleId) {
-      const styleResult = await pool.request()
-        .input("StyleId", sql.Int, parseInt(regionalStyleId))
-        .query("SELECT * FROM RegionalLibrary WHERE Id = @StyleId");
-
-      regionalStyle = styleResult.recordset[0];
-      console.log("[MixMatch] Regional style:", regionalStyle?.RegionName);
+      regionalStyle = await RegionalLibrary.findById(regionalStyleId).lean();
+      console.log("[MixMatch] Regional style:", regionalStyle?.regionName);
     }
 
-    // Build AI prompt với HEX codes thực tế
     const prompt = buildMixMatchPrompt({
       wallColor,
       roofColor,
@@ -236,91 +154,45 @@ router.post("/generate", auth, upload.single("house"), async (req, res) => {
 
     console.log("[MixMatch] AI Prompt length:", prompt.length);
 
-    // Gọi AI service để tạo ảnh
     let outputImageUrl = null;
     try {
-      const imageBuffer = await generateImageExternal(prompt, {
-        width: 1024,
-        height: 1024,
-      });
-
-      // Upload kết quả lên Cloudinary
-      const outputUpload = await uploadBufferToCloudinary(
-        imageBuffer,
-        "exterior_ai/mixmatch/outputs"
-      );
+      const imageBuffer = await generateImageExternal(prompt, { width: 1024, height: 1024 });
+      const outputUpload = await uploadBufferToCloudinary(imageBuffer, "exterior_ai/mixmatch/outputs");
       outputImageUrl = outputUpload.secure_url;
-
       console.log("[MixMatch] Output image uploaded:", outputImageUrl);
     } catch (aiError) {
       console.error("[MixMatch] AI generation error:", aiError);
-      // Tiếp tục lưu vào DB với status 'failed'
     }
 
-    // Lưu project vào database
-    const insertResult = await pool.request()
-      .input("UserId", sql.BigInt, userId)
-      .input("InputImageUrl", sql.NVarChar(500), houseUpload.secure_url)
-      .input("OutputImageUrl", sql.NVarChar(500), outputImageUrl)
-      .input("RegionalStyleId", sql.Int, regionalStyleId ? parseInt(regionalStyleId) : null)
-      .input("WallColorId", sql.Int, wallColorId ? parseInt(wallColorId) : null)
-      .input("RoofColorId", sql.Int, roofColorId ? parseInt(roofColorId) : null)
-      .input("ColumnColorId", sql.Int, columnColorId ? parseInt(columnColorId) : null)
-      .input("CustomNotes", sql.NVarChar(sql.MAX), customNotes || null)
-      .input("PromptUsed", sql.NVarChar(sql.MAX), prompt)
-      .input("Status", sql.NVarChar(50), outputImageUrl ? "completed" : "failed")
-      .query(`
-        INSERT INTO MixMatchProjects
-        (UserId, InputImageUrl, OutputImageUrl, RegionalStyleId, WallColorId, RoofColorId, ColumnColorId, CustomNotes, PromptUsed, Status, CompletedAt)
-        OUTPUT INSERTED.Id
-        VALUES
-        (@UserId, @InputImageUrl, @OutputImageUrl, @RegionalStyleId, @WallColorId, @RoofColorId, @ColumnColorId, @CustomNotes, @PromptUsed, @Status, ${outputImageUrl ? "SYSDATETIME()" : "NULL"})
-      `);
+    const project = await MixMatchProject.create({
+      userId,
+      inputImageUrl: houseUpload.secure_url,
+      outputImageUrl,
+      regionalStyleId: regionalStyleId || null,
+      wallColorId: wallColorId || null,
+      roofColorId: roofColorId || null,
+      columnColorId: columnColorId || null,
+      customNotes: customNotes || null,
+      promptUsed: prompt,
+      status: outputImageUrl ? "completed" : "failed",
+      completedAt: outputImageUrl ? new Date() : null,
+    });
 
-    const projectId = insertResult.recordset[0].Id;
+    console.log("[MixMatch] Project saved with ID:", project._id);
 
-    console.log("[MixMatch] Project saved with ID:", projectId);
-
-    // Trả về kết quả
     res.json({
       ok: true,
       data: {
-        projectId,
+        projectId: project._id,
         inputImageUrl: houseUpload.secure_url,
-        outputImageUrl: outputImageUrl,
+        outputImageUrl,
         status: outputImageUrl ? "completed" : "failed",
         colors: {
-          wall: wallColor
-            ? {
-                id: wallColor.Id,
-                name: wallColor.ColorName,
-                hexCode: wallColor.HexCode,
-                brand: wallColor.BrandName,
-              }
-            : null,
-          roof: roofColor
-            ? {
-                id: roofColor.Id,
-                name: roofColor.ColorName,
-                hexCode: roofColor.HexCode,
-                brand: roofColor.BrandName,
-              }
-            : null,
-          column: columnColor
-            ? {
-                id: columnColor.Id,
-                name: columnColor.ColorName,
-                hexCode: columnColor.HexCode,
-                brand: columnColor.BrandName,
-              }
-            : null,
+          wall: wallColor ? { id: wallColor._id, name: wallColor.colorName, hexCode: wallColor.hexCode, brand: wallColor.BrandName } : null,
+          roof: roofColor ? { id: roofColor._id, name: roofColor.colorName, hexCode: roofColor.hexCode, brand: roofColor.BrandName } : null,
+          column: columnColor ? { id: columnColor._id, name: columnColor.colorName, hexCode: columnColor.hexCode, brand: columnColor.BrandName } : null,
         },
-        regionalStyle: regionalStyle
-          ? {
-              id: regionalStyle.Id,
-              name: regionalStyle.RegionName,
-            }
-          : null,
+        regionalStyle: regionalStyle ? { id: regionalStyle._id, name: regionalStyle.regionName } : null,
       },
       message: outputImageUrl
         ? "Tạo thiết kế thành công!"
@@ -328,92 +200,90 @@ router.post("/generate", auth, upload.single("house"), async (req, res) => {
     });
   } catch (err) {
     console.error("[MixMatch] Generate error:", err);
-    res.status(500).json({
-      ok: false,
-      message: "Lỗi tạo thiết kế Mix & Match",
-      detail: err.message,
-    });
+    res.status(500).json({ ok: false, message: "Lỗi tạo thiết kế Mix & Match", detail: err.message });
   }
 });
 
-/**
- * 5️⃣ GET /api/mixmatch/history
- * Lấy lịch sử dự án Mix & Match của user
- * AUTHENTICATED - Cần token
- */
 router.get("/history", auth, async (req, res) => {
   try {
     const userId = req.user?.id || req.user?.userId;
     if (!userId) {
-      return res.status(401).json({
-        ok: false,
-        message: "Không thể xác định người dùng.",
-      });
+      return res.status(401).json({ ok: false, message: "Không thể xác định người dùng." });
     }
 
-    const pool = await getPool();
-    const result = await pool.request()
-      .input("UserId", sql.BigInt, userId)
-      .query(`
-        SELECT
-          m.Id, m.InputImageUrl, m.OutputImageUrl, m.Status,
-          m.CreatedAt, m.CompletedAt, m.CustomNotes,
-          r.RegionName AS RegionalStyleName,
-          wc.ColorName AS WallColorName, wc.HexCode AS WallHexCode, wc.ColorCode AS WallColorCode,
-          (SELECT BrandName FROM PaintBrands WHERE Id = wc.BrandId) AS WallBrandName,
-          rc.ColorName AS RoofColorName, rc.HexCode AS RoofHexCode, rc.ColorCode AS RoofColorCode,
-          (SELECT BrandName FROM PaintBrands WHERE Id = rc.BrandId) AS RoofBrandName,
-          cc.ColorName AS ColumnColorName, cc.HexCode AS ColumnHexCode, cc.ColorCode AS ColumnColorCode,
-          (SELECT BrandName FROM PaintBrands WHERE Id = cc.BrandId) AS ColumnBrandName
-        FROM MixMatchProjects m
-        LEFT JOIN RegionalLibrary r ON m.RegionalStyleId = r.Id
-        LEFT JOIN PaintColors wc ON m.WallColorId = wc.Id
-        LEFT JOIN PaintColors rc ON m.RoofColorId = rc.Id
-        LEFT JOIN PaintColors cc ON m.ColumnColorId = cc.Id
-        WHERE m.UserId = @UserId
-        ORDER BY m.CreatedAt DESC
-      `);
+    const items = await MixMatchProject.find({ userId })
+      .populate("regionalStyleId", "regionName")
+      .populate("wallColorId", "colorName hexCode colorCode brandId")
+      .populate("roofColorId", "colorName hexCode colorCode brandId")
+      .populate("columnColorId", "colorName hexCode colorCode brandId")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json({
-      ok: true,
-      items: result.recordset || [],
+    const PaintBrandModel = require("../models/PaintBrand");
+    const brandIds = new Set();
+    items.forEach((item) => {
+      [item.wallColorId, item.roofColorId, item.columnColorId].forEach((c) => {
+        if (c?.brandId) brandIds.add(String(c.brandId));
+      });
     });
+
+    const brands = await PaintBrandModel.find({ _id: { $in: [...brandIds] } }).select("brandName").lean();
+    const brandMap = {};
+    brands.forEach((b) => { brandMap[String(b._id)] = b.brandName; });
+
+    const mapped = items.map((m) => ({
+      id: m._id,
+      inputImageUrl: m.inputImageUrl,
+      outputImageUrl: m.outputImageUrl,
+      status: m.status,
+      createdAt: m.createdAt,
+      completedAt: m.completedAt,
+      customNotes: m.customNotes,
+      RegionalStyleName: m.regionalStyleId?.regionName || null,
+      WallColorName: m.wallColorId?.colorName || null,
+      WallHexCode: m.wallColorId?.hexCode || null,
+      WallColorCode: m.wallColorId?.colorCode || null,
+      WallBrandName: m.wallColorId?.brandId ? brandMap[String(m.wallColorId.brandId)] : null,
+      RoofColorName: m.roofColorId?.colorName || null,
+      RoofHexCode: m.roofColorId?.hexCode || null,
+      RoofColorCode: m.roofColorId?.colorCode || null,
+      RoofBrandName: m.roofColorId?.brandId ? brandMap[String(m.roofColorId.brandId)] : null,
+      ColumnColorName: m.columnColorId?.colorName || null,
+      ColumnHexCode: m.columnColorId?.hexCode || null,
+      ColumnColorCode: m.columnColorId?.colorCode || null,
+      ColumnBrandName: m.columnColorId?.brandId ? brandMap[String(m.columnColorId.brandId)] : null,
+    }));
+
+    res.json({ ok: true, items: mapped });
   } catch (err) {
     console.error("[MixMatch] Get history error:", err);
-    res.status(500).json({
-      ok: false,
-      message: "Lỗi lấy lịch sử dự án",
-      detail: err.message,
-    });
+    res.status(500).json({ ok: false, message: "Lỗi lấy lịch sử dự án", detail: err.message });
   }
 });
 
-/**
- * Helper function: Build AI prompt cho Mix & Match
- */
 function buildMixMatchPrompt({ wallColor, roofColor, columnColor, regionalStyle, customNotes }) {
   let colorInstructions = "";
 
   if (wallColor) {
-    colorInstructions += `WALLS: ${wallColor.ColorName} (${wallColor.HexCode}) - ${wallColor.BrandName} ${wallColor.ColorCode}\n`;
+    colorInstructions += `WALLS: ${wallColor.ColorName || wallColor.colorName} (${wallColor.HexCode || wallColor.hexCode}) - ${wallColor.BrandName || ""} ${wallColor.ColorCode || wallColor.colorCode || ""}\n`;
   } else {
     colorInstructions += `WALLS: Keep original color\n`;
   }
 
   if (roofColor) {
-    colorInstructions += `ROOF: ${roofColor.ColorName} (${roofColor.HexCode}) - ${roofColor.BrandName} ${roofColor.ColorCode}\n`;
+    colorInstructions += `ROOF: ${roofColor.ColorName || roofColor.colorName} (${roofColor.HexCode || roofColor.hexCode}) - ${roofColor.BrandName || ""} ${roofColor.ColorCode || roofColor.colorCode || ""}\n`;
   } else {
     colorInstructions += `ROOF: Keep original color\n`;
   }
 
   if (columnColor) {
-    colorInstructions += `COLUMNS: ${columnColor.ColorName} (${columnColor.HexCode}) - ${columnColor.BrandName} ${columnColor.ColorCode}\n`;
+    colorInstructions += `COLUMNS: ${columnColor.ColorName || columnColor.colorName} (${columnColor.HexCode || columnColor.hexCode}) - ${columnColor.BrandName || ""} ${columnColor.ColorCode || columnColor.colorCode || ""}\n`;
   } else {
     colorInstructions += `COLUMNS: Keep original color\n`;
   }
 
   const styleHint = regionalStyle
-    ? `\n\nREGIONAL STYLE: ${regionalStyle.RegionName}\nStyle Guide: ${regionalStyle.StyleData || regionalStyle.Description || ""}`
+    ? `\n\nREGIONAL STYLE: ${regionalStyle.regionName || regionalStyle.RegionName}\nStyle Guide: ${regionalStyle.styleData || regionalStyle.StyleData || regionalStyle.description || regionalStyle.Description || ""}`
     : "";
 
   const notes = customNotes ? `\n\nCUSTOM NOTES: ${customNotes}` : "";

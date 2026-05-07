@@ -15,12 +15,12 @@ const DEFAULT_QUERY = {
 
 function normalizeUsers(items = []) {
   return items.map((item) => ({
-    id: item.Id,
-    email: item.Email,
-    role: item.Role,
-    createdAt: item.CreatedAt,
-    generationCount: item.GenerationCount || 0,
-    lastGenerationAt: item.LastGenerationAt,
+    id: item.id,
+    email: item.email,
+    role: item.role,
+    createdAt: item.createdAt,
+    generationCount: item.generationCount || 0,
+    lastGenerationAt: item.lastGenerationAt,
   }));
 }
 

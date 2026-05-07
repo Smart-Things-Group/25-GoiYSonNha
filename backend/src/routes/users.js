@@ -1,11 +1,10 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { getPool, sql } = require("../db");
+const User = require("../models/User");
 
 const router = express.Router();
 
-// Danh sách người dùng (dành cho admin)
 router.get("/", async (req, res) => {
   try {
     let { page = 1, pageSize = 20, search = "", role = "" } = req.query;
@@ -15,112 +14,87 @@ router.get("/", async (req, res) => {
     const sanitizedSearch = search.trim();
     const normalizedRole = (role || "").trim().toLowerCase();
 
-    const filters = [];
+    const filter = {};
     if (sanitizedSearch) {
-      filters.push("U.Email LIKE @Search");
+      filter.email = { $regex: sanitizedSearch, $options: "i" };
     }
     if (normalizedRole && normalizedRole !== "all") {
-      filters.push("LOWER(U.Role) = @Role");
+      filter.role = normalizedRole;
     }
-    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
     const offset = (page - 1) * pageSize;
 
-    const applyFilters = (request) => {
-      if (sanitizedSearch) {
-        request.input("Search", sql.NVarChar(191), `%${sanitizedSearch}%`);
-      }
-      if (normalizedRole && normalizedRole !== "all") {
-        request.input("Role", sql.NVarChar(20), normalizedRole);
-      }
-      return request;
-    };
+    const total = await User.countDocuments(filter);
 
-    const pool = await getPool();
-
-    const countResult = await applyFilters(pool.request()).query(
-      `SELECT COUNT(*) AS total FROM Users U ${whereClause}`
-    );
-    const total = countResult.recordset?.[0]?.total || 0;
-
-    const summaryResult = await applyFilters(pool.request()).query(
-      `SELECT U.Role, COUNT(*) AS count FROM Users U ${whereClause} GROUP BY U.Role`
-    );
-    const roleSummary = summaryResult.recordset.reduce((acc, row) => {
-      const key = (row.Role || "unknown").toLowerCase();
-      acc[key] = row.count;
+    const roleSummaryAgg = await User.aggregate([
+      { $match: filter },
+      { $group: { _id: "$role", count: { $sum: 1 } } },
+    ]);
+    const roleSummary = roleSummaryAgg.reduce((acc, row) => {
+      acc[(row._id || "unknown").toLowerCase()] = row.count;
       return acc;
     }, {});
 
-    const listQuery = `
-      SELECT U.Id, U.Email, U.Role, U.CreatedAt,
-             COUNT(G.Id) AS GenerationCount,
-             MAX(G.CreatedAt) AS LastGenerationAt
-      FROM Users U
-      LEFT JOIN Generations G ON G.UserId = U.Id
-      ${whereClause}
-      GROUP BY U.Id, U.Email, U.Role, U.CreatedAt
-      ORDER BY U.CreatedAt DESC
-      OFFSET ${offset} ROWS
-      FETCH NEXT ${pageSize} ROWS ONLY;
-    `;
-
-    const listResult = await applyFilters(pool.request()).query(listQuery);
-    const items = listResult.recordset || [];
+    const users = await User.aggregate([
+      { $match: filter },
+      {
+        $lookup: {
+          from: "generations",
+          localField: "_id",
+          foreignField: "userId",
+          as: "generations",
+        },
+      },
+      {
+        $addFields: {
+          id: "$_id",
+          generationCount: { $size: "$generations" },
+          lastGenerationAt: { $max: "$generations.createdAt" },
+        },
+      },
+      { $project: { generations: 0, passwordHash: 0, __v: 0 } },
+      { $sort: { createdAt: -1 } },
+      { $skip: offset },
+      { $limit: pageSize },
+    ]);
 
     res.json({
       ok: true,
-      data: {
-        page,
-        pageSize,
-        total,
-        roleSummary,
-        items,
-      },
+      data: { page, pageSize, total, roleSummary, items: users },
     });
   } catch (err) {
     res.status(500).json({ ok: false, message: err.message });
   }
 });
 
-// Đăng ký
 router.post("/register", async (req, res) => {
   try {
     const { email, password } = req.body;
     const hash = await bcrypt.hash(password, 10);
 
-    const pool = await getPool();
-    await pool.request()
-      .input("Email", sql.NVarChar(191), email)
-      .input("PasswordHash", sql.NVarChar(255), hash)
-      .query(`
-        INSERT INTO Users (Email, PasswordHash, Role, CreatedAt)
-        VALUES (@Email, @PasswordHash, 'user', SYSDATETIME());
-      `);
+    await User.create({ email, passwordHash: hash, role: "user" });
 
     res.json({ ok: true, message: "Đăng ký thành công!" });
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ ok: false, message: "Email đã tồn tại" });
+    }
     res.status(500).json({ ok: false, message: err.message });
   }
 });
 
-// Đăng nhập
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const pool = await getPool();
-    const result = await pool.request()
-      .input("Email", sql.NVarChar(191), email)
-      .query("SELECT * FROM Users WHERE Email = @Email");
-
-    const user = result.recordset[0];
+    const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ ok: false, message: "Email không tồn tại" });
 
-    const valid = await bcrypt.compare(password, user.PasswordHash);
+    const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) return res.status(400).json({ ok: false, message: "Sai mật khẩu" });
 
     const token = jwt.sign(
-      { userId: user.Id, email: user.Email, role: user.Role },
+      { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -128,7 +102,7 @@ router.post("/login", async (req, res) => {
     res.json({
       ok: true,
       token,
-      user: { id: user.Id, email: user.Email, role: user.Role },
+      user: { id: user._id, email: user.email, role: user.role },
     });
   } catch (err) {
     res.status(500).json({ ok: false, message: err.message });

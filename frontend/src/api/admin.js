@@ -55,6 +55,7 @@ export async function fetchAdminUsers(params = {}, token = "") {
   });
 
   const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
 
   if (!response.ok || data?.ok === false) {
     const message =
@@ -75,6 +76,7 @@ export async function fetchAdminStats(token = "") {
   });
 
   const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
 
   if (!response.ok || data?.ok === false) {
     const message = data?.message || "Không thể tải thống kê admin";
@@ -99,6 +101,7 @@ export async function fetchAdminGenerations(params = {}, token = "") {
   );
 
   const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
 
   if (!response.ok || data?.ok === false) {
     const message =
@@ -122,6 +125,7 @@ export async function fetchGenerationsByUser(params = {}, token = "") {
     }
   );
   const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
 
   if (!response.ok || data?.ok === false) {
     const message =
@@ -142,6 +146,7 @@ export async function deleteAdminGeneration(id, token = "") {
   });
 
   const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
   if (!response.ok || data?.ok === false) {
     const message = data?.message || "Không thể xóa bản ghi generate";
     const error = new Error(message);
@@ -160,6 +165,7 @@ export async function createAdminUser(payload = {}, token = "") {
   });
 
   const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
   if (!response.ok || data?.ok === false) {
     const message = data?.message || "Không thể tạo tài khoản mới";
     const error = new Error(message);
@@ -178,6 +184,7 @@ export async function updateAdminUser(id, payload = {}, token = "") {
   });
 
   const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
   if (!response.ok || data?.ok === false) {
     const message = data?.message || "Không thể cập nhật tài khoản";
     const error = new Error(message);
@@ -195,6 +202,7 @@ export async function deleteAdminUser(id, token = "") {
   });
 
   const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
   if (!response.ok || data?.ok === false) {
     const message = data?.message || "Không thể xóa tài khoản";
     const error = new Error(message);
