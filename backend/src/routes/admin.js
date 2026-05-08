@@ -377,7 +377,7 @@ router.post("/library", upload.single("image"), asyncHandler(async (req, res) =>
   await RegionalLibrary.create({
     regionName,
     imageUrl: cloudRes.secure_url,
-    styleData: styleData ? tryParseJSON(styleData) : styleData,
+    styleData: styleData || "",
     description,
   });
 
@@ -411,7 +411,7 @@ router.put("/library/:id", upload.single("image"), asyncHandler(async (req, res)
     {
       regionName: regionName || existing.regionName,
       imageUrl,
-      styleData: styleData !== undefined ? tryParseJSON(styleData) : existing.styleData,
+      styleData: styleData !== undefined ? styleData : existing.styleData,
       description: description !== undefined ? description : existing.description,
     },
     { new: true }

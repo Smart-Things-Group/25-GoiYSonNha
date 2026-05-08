@@ -9,6 +9,17 @@ import useToasts from "../hooks/useToasts";
 
 const REGION_OPTIONS = ["Bắc", "Trung", "Nam", "Âu"];
 
+function styleDataToString(styleData) {
+  if (!styleData) return "";
+  if (typeof styleData === "string") return styleData;
+  if (typeof styleData === "object") {
+    return styleData.summary_vi
+      || styleData.visual_style_transfer?.master_prompt_en
+      || JSON.stringify(styleData, null, 2);
+  }
+  return String(styleData);
+}
+
 function AdminLibraryManager({ token }) {
   const { pushToast } = useToasts();
   const [items, setItems] = useState([]);
@@ -176,7 +187,7 @@ function AdminLibraryManager({ token }) {
     setEditingId(item.id);
     setFormData({
       regionName: item.regionName || "Bắc",
-      styleData: item.styleData || "",
+      styleData: styleDataToString(item.styleData),
       description: item.description || "",
     });
     setFile(null);
@@ -387,7 +398,7 @@ function AdminLibraryManager({ token }) {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {item.styleData || "Chưa có mô tả"}
+                    {styleDataToString(item.styleData) || "Chưa có mô tả"}
                   </p>
                 </div>
 

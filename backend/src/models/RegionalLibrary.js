@@ -4,7 +4,7 @@ const regionalLibrarySchema = new mongoose.Schema(
   {
     regionName: { type: String, maxlength: 50 },
     imageUrl: { type: String, maxlength: 500 },
-    styleData: { type: mongoose.Schema.Types.Mixed },
+    styleData: { type: String },
     description: String,
   },
   {
