@@ -7,6 +7,13 @@ import {
 } from "../api/mixmatch";
 import BeforeAfterSlider from "./BeforeAfterSlider";
 
+const imageProviderOptions = [
+  { value: "auto", label: "Tự động", description: "Tự động chọn engine tốt nhất." },
+  { value: "hq", label: "HQ API", description: "Engine chất lượng cao, ưu tiên." },
+  { value: "stability", label: "Stability AI", description: "Engine Stable Diffusion." },
+  { value: "sd35", label: "SD 3.5 Server", description: "Engine Stable Diffusion 3.5 Medium." },
+];
+
 /* ─── Regional Style Modal ─── */
 function RegionalStyleModal({ styles, selectedId, onSelect, onClose }) {
   const [filter, setFilter] = useState("all");
@@ -146,6 +153,8 @@ export default function MixMatchPage({ user, pushToast }) {
   // State cho filters
   const [brandFilter, setBrandFilter] = useState("");
   const [colorSearch, setColorSearch] = useState("");
+
+  const [selectedProvider, setSelectedProvider] = useState("auto");
 
   // State cho loading & result
   const [loading, setLoading] = useState(false);
@@ -291,6 +300,7 @@ export default function MixMatchPage({ user, pushToast }) {
       if (selectedColors.roof) formData.append("roofColorId", selectedColors.roof);
       if (selectedColors.column) formData.append("columnColorId", selectedColors.column);
       if (selectedStyleId) formData.append("regionalStyleId", selectedStyleId);
+      formData.append("provider", selectedProvider);
 
       const res = await generateMixMatch(formData, user.token);
 
@@ -509,6 +519,44 @@ export default function MixMatchPage({ user, pushToast }) {
               </>
             )}
           </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          border: "1px solid var(--color-border-light)",
+          borderRadius: 12,
+          padding: 16,
+          background: "var(--color-surface)",
+          marginBottom: 24,
+        }}
+      >
+        <h3 style={{ margin: "0 0 8px", fontSize: "1rem", fontWeight: 600, color: "var(--color-text-primary)" }}>
+          Engine tạo ảnh
+        </h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+          {imageProviderOptions.map((option) => {
+            const isSelected = selectedProvider === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setSelectedProvider(option.value)}
+                disabled={loading}
+                style={{
+                  textAlign: "left",
+                  border: isSelected ? "2px solid var(--color-brand-primary)" : "1px solid var(--color-border-light)",
+                  borderRadius: 10,
+                  padding: 12,
+                  background: isSelected ? "rgba(37, 99, 235, 0.08)" : "var(--color-bg-primary)",
+                  cursor: loading ? "not-allowed" : "pointer",
+                }}
+              >
+                <strong style={{ display: "block", color: "var(--color-text-primary)", marginBottom: 4 }}>{option.label}</strong>
+                <span style={{ color: "var(--color-text-muted)", fontSize: "0.78rem", lineHeight: 1.4 }}>{option.description}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

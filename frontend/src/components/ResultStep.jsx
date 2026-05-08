@@ -1,5 +1,28 @@
 import { useEffect, useState, useRef } from "react";
 
+const imageProviderOptions = [
+  {
+    value: "auto",
+    label: "Tự động",
+    description: "Tự động chọn engine tốt nhất hiện có.",
+  },
+  {
+    value: "hq",
+    label: "HQ API",
+    description: "Engine chất lượng cao, ưu tiên.",
+  },
+  {
+    value: "stability",
+    label: "Stability AI",
+    description: "Engine Stable Diffusion cho image-to-image.",
+  },
+  {
+    value: "sd35",
+    label: "SD 3.5 Server",
+    description: "Engine Stable Diffusion 3.5 Medium.",
+  },
+];
+
 function ResultStep({
   data,
   onHouseSelected,
@@ -13,6 +36,7 @@ function ResultStep({
 }) {
   const [notes, setNotes] = useState("");
   const [isSaved, setIsSaved] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState("auto");
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
@@ -220,6 +244,36 @@ function ResultStep({
           </div>
         </div>
 
+        <div className="wizard-card__section">
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)", marginBottom: "var(--space-3)" }}>
+            Chọn engine tạo ảnh
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "var(--space-3)" }}>
+            {imageProviderOptions.map((option) => {
+              const isSelected = selectedProvider === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setSelectedProvider(option.value)}
+                  disabled={loading}
+                  style={{
+                    textAlign: "left",
+                    border: isSelected ? "2px solid var(--color-brand-primary)" : "1px solid var(--color-border-light)",
+                    borderRadius: "var(--radius-lg)",
+                    padding: "var(--space-3)",
+                    background: isSelected ? "rgba(37, 99, 235, 0.08)" : "var(--color-surface)",
+                    cursor: loading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  <strong style={{ display: "block", color: "var(--color-text-primary)", marginBottom: 4 }}>{option.label}</strong>
+                  <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)", lineHeight: 1.4 }}>{option.description}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {apiMessage && (
           <div className="alert alert--info">{apiMessage}</div>
         )}
@@ -231,7 +285,7 @@ function ResultStep({
           <button 
             type="button" 
             className="btn btn-primary" 
-            onClick={onGenerate}
+            onClick={() => onGenerate(selectedProvider)}
             disabled={loading}
           >
             {loading ? (
@@ -274,7 +328,7 @@ function ResultStep({
           <button 
             type="button" 
             className="btn btn-secondary"
-            onClick={onRegenerate}
+            onClick={() => onRegenerate(selectedProvider)}
             disabled={loading}
           >
             🔄 Tạo lại
@@ -290,22 +344,22 @@ function ResultStep({
           onMouseMove={handleMouseMove}
           onTouchMove={handleTouchMove}
         >
-          {/* Before Image (House) */}
+          {/* After Image (Result) - Base layer */}
           <div className="comparison-slider__before">
-            <img src={houseImageSrc} alt="Ảnh gốc" />
-            <span className="comparison-slider__label comparison-slider__label--before">
-              Trước
-            </span>
-          </div>
-          
-          {/* After Image (Result) - Clipped */}
-          <div 
-            className="comparison-slider__after"
-            style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
-          >
             <img src={resultImageSrc} alt="Sau khi sơn" />
             <span className="comparison-slider__label comparison-slider__label--after">
               Sau
+            </span>
+          </div>
+
+          {/* Before Image (House) - Clipped overlay */}
+          <div
+            className="comparison-slider__after"
+            style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
+          >
+            <img src={houseImageSrc} alt="Ảnh gốc" />
+            <span className="comparison-slider__label comparison-slider__label--before">
+              Trước
             </span>
           </div>
           

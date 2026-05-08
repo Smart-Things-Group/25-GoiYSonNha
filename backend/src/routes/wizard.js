@@ -5,8 +5,6 @@ require("dotenv").config();
 const { uploadBufferToCloudinary } = require("../services/cloud");
 const { 
   analyzeImage, // Phân tích ảnh
-  generateImageExternal, // Tạo ảnh
-  generateImageFromThreeServices, // Tạo 3 ảnh từ 3 services
   generateImageFromImages, // Image-to-image
 } = require("../services/external-ai");
 const Generation = require("../models/Generation");
@@ -179,7 +177,7 @@ router.post("/generate-final", auth, upload.single("house"), async (req, res) =>
         message: "Không thể xác định người dùng. Vui lòng đăng nhập lại." 
       });
     }
-    const { tempId } = req.body;
+    const { tempId, provider } = req.body;
     const file = req.file;
 
     if (!file) {
@@ -251,98 +249,22 @@ Hãy sử dụng ảnh nhà thô làm nền bắt buộc, bám sát cấu trúc 
 `;
 
 
-    // Gọi External AI Services để tạo ảnh - trả về 3 kết quả từ 3 services
-    let imageResults;
-    
-    if (ctx.sampleImageBuffer) {
-      // Có cả ảnh mẫu và ảnh nhà thô - sử dụng image-to-image generation
-      // Tạm thời dùng generateImageExternal, có thể cải thiện sau
-      const imageBuffer = await generateImageFromImages(
-        file.buffer,           // ảnh nhà thô (source)
-        file.mimetype,
-        ctx.sampleImageBuffer, // ảnh mẫu (reference)
-        ctx.sampleMimeType || "image/jpeg",
-        prompt
-      );
-      // Nếu có ảnh mẫu, chỉ trả về 1 kết quả
-      const upOutput = await uploadBufferToCloudinary(imageBuffer, "exterior_ai/outputs");
-      imageResults = {
-        stability: null,
-        replicate: null,
-        huggingface: null,
-        single: upOutput.secure_url,
-      };
-    } else {
-      // Chỉ có ảnh nhà thô, tạo ảnh từ nhiều services (Gemini ưu tiên vào single)
-      const results = await generateImageFromThreeServices(prompt, {
-        width: 1024,
-        height: 1024,
-      });
+    const imageBuffer = await generateImageFromImages(
+      file.buffer,
+      file.mimetype,
+      ctx.sampleImageBuffer || null,
+      ctx.sampleMimeType || null,
+      prompt,
+      { provider }
+    );
 
-      // Upload từng ảnh lên Cloudinary
-      const uploadPromises = [];
-      
-      // Gemini (ưu tiên vào single)
-      if (results.single) {
-        uploadPromises.push(
-          uploadBufferToCloudinary(results.single, "exterior_ai/outputs")
-            .then(up => ({ service: 'single', url: up.secure_url }))
-            .catch(err => {
-              console.error('[Upload] Gemini image error:', err);
-              return { service: 'single', url: null };
-            })
-        );
-      } else {
-        uploadPromises.push(Promise.resolve({ service: 'single', url: null }));
-      }
-
-      if (results.stability) {
-        uploadPromises.push(
-          uploadBufferToCloudinary(results.stability, "exterior_ai/outputs")
-            .then(up => ({ service: 'stability', url: up.secure_url }))
-            .catch(err => {
-              console.error('[Upload] Stability AI image error:', err);
-              return { service: 'stability', url: null };
-            })
-        );
-      } else {
-        uploadPromises.push(Promise.resolve({ service: 'stability', url: null }));
-      }
-
-      if (results.replicate) {
-        uploadPromises.push(
-          uploadBufferToCloudinary(results.replicate, "exterior_ai/outputs")
-            .then(up => ({ service: 'replicate', url: up.secure_url }))
-            .catch(err => {
-              console.error('[Upload] Replicate image error:', err);
-              return { service: 'replicate', url: null };
-            })
-        );
-      } else {
-        uploadPromises.push(Promise.resolve({ service: 'replicate', url: null }));
-      }
-
-      if (results.huggingface) {
-        uploadPromises.push(
-          uploadBufferToCloudinary(results.huggingface, "exterior_ai/outputs")
-            .then(up => ({ service: 'huggingface', url: up.secure_url }))
-            .catch(err => {
-              console.error('[Upload] Hugging Face image error:', err);
-              return { service: 'huggingface', url: null };
-            })
-        );
-      } else {
-        uploadPromises.push(Promise.resolve({ service: 'huggingface', url: null }));
-      }
-
-      const uploadedResults = await Promise.all(uploadPromises);
-      imageResults = {
-        single: uploadedResults.find(r => r.service === 'single')?.url || null,
-        stability: uploadedResults.find(r => r.service === 'stability')?.url || null,
-        replicate: uploadedResults.find(r => r.service === 'replicate')?.url || null,
-        huggingface: uploadedResults.find(r => r.service === 'huggingface')?.url || null,
-      };
-    }
+    const upOutput = await uploadBufferToCloudinary(imageBuffer, "exterior_ai/outputs");
+    const imageResults = {
+      stability: null,
+      replicate: null,
+      huggingface: null,
+      single: upOutput.secure_url,
+    };
 
     // Lưu ảnh đầu tiên có sẵn vào DB (hoặc ảnh single nếu có)
     const outputImageUrl = imageResults.single || 
@@ -374,6 +296,7 @@ Hãy sử dụng ảnh nhà thô làm nền bắt buộc, bám sát cấu trúc 
         inputHouse: upHouse.secure_url,
         outputImages: imageResults, // Trả về 3 kết quả
         outputImage: outputImageUrl, // Giữ lại cho backward compatibility
+        provider: provider || "auto",
       },
     });
   } catch (err) {

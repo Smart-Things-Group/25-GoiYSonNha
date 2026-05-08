@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 require("dotenv").config();
 const { uploadBufferToCloudinary } = require("../services/cloud");
-const { generateImageExternal } = require("../services/external-ai");
+const { generateImageFromImages } = require("../services/external-ai");
 const RegionalLibrary = require("../models/RegionalLibrary");
 const PaintBrand = require("../models/PaintBrand");
 const PaintColor = require("../models/PaintColor");
@@ -95,16 +95,12 @@ router.post("/generate", auth, upload.single("house"), async (req, res) => {
       return res.status(401).json({ ok: false, message: "Không thể xác định người dùng. Vui lòng đăng nhập lại." });
     }
 
-    const { regionalStyleId, wallColorId, roofColorId, columnColorId, customNotes } = req.body;
+    const { regionalStyleId, wallColorId, roofColorId, columnColorId, customNotes, provider } = req.body;
     const file = req.file;
 
     if (!file) {
       return res.status(400).json({ ok: false, message: "Thiếu ảnh nhà thô. Vui lòng upload ảnh." });
     }
-    if (!wallColorId && !roofColorId && !columnColorId) {
-      return res.status(400).json({ ok: false, message: "Vui lòng chọn ít nhất 1 màu sơn cho tường, mái hoặc cột." });
-    }
-
     console.log("[MixMatch] Generate request:", { userId, regionalStyleId, wallColorId, roofColorId, columnColorId, fileSize: file.size });
 
     const houseUpload = await uploadBufferToCloudinary(file.buffer, "exterior_ai/mixmatch/inputs");
@@ -156,7 +152,14 @@ router.post("/generate", auth, upload.single("house"), async (req, res) => {
 
     let outputImageUrl = null;
     try {
-      const imageBuffer = await generateImageExternal(prompt, { width: 1024, height: 1024 });
+      const imageBuffer = await generateImageFromImages(
+        file.buffer,
+        file.mimetype,
+        null,
+        null,
+        prompt,
+        { provider }
+      );
       const outputUpload = await uploadBufferToCloudinary(imageBuffer, "exterior_ai/mixmatch/outputs");
       outputImageUrl = outputUpload.secure_url;
       console.log("[MixMatch] Output image uploaded:", outputImageUrl);
@@ -186,6 +189,7 @@ router.post("/generate", auth, upload.single("house"), async (req, res) => {
         projectId: project._id,
         inputImageUrl: houseUpload.secure_url,
         outputImageUrl,
+        provider: provider || "auto",
         status: outputImageUrl ? "completed" : "failed",
         colors: {
           wall: wallColor ? { id: wallColor._id, name: wallColor.colorName, hexCode: wallColor.hexCode, brand: wallColor.BrandName } : null,

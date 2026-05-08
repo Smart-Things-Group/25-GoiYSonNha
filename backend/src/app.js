@@ -3,6 +3,8 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 // Load env from backend/.env no matter the working directory
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
@@ -39,7 +41,26 @@ app.use((req, res, next) => {
 });
 
 // ✅ Cấu hình cơ bản
-app.use(cors());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim());
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
+
+app.use(helmet());
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { ok: false, message: "Quá nhiều request. Vui lòng thử lại sau 15 phút." },
+});
+app.use("/api", apiLimiter);
+
 app.use(morgan(":method :url :status :response-time ms"));
 // ✅ Parser JSON cho các route API thông thường
 app.use(express.json({ limit: "10mb" }));

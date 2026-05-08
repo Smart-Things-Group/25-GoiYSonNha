@@ -43,6 +43,14 @@ function buildModelList() {
 const GOOGLE_IMAGE_ANALYSIS_MODELS = buildModelList();
 
 const RETRYABLE_GOOGLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
+const IMAGE_GENERATION_PROVIDERS = new Set(['auto', 'hq', 'stability', 'sd35']);
+
+function normalizeImageProvider(provider) {
+  const value = String(provider || process.env.IMAGE_GENERATION_PROVIDER || 'auto').trim().toLowerCase();
+  if (value === 'sd35-server' || value === 'sd3.5' || value === 'custom-sd35') return 'sd35';
+  if (IMAGE_GENERATION_PROVIDERS.has(value)) return value;
+  return 'auto';
+}
 
 function getGoogleGenAiClient() {
   if (googleGenAiClient) return googleGenAiClient;
@@ -299,6 +307,59 @@ async function generateImageWithStabilityAI(prompt, options = {}) {
     console.error('[Stability AI Error]', error.response?.data || error.message);
     throw error;
   }
+}
+
+async function generateImageWithStabilityImageToImage(sourceImageBuffer, sourceMimeType, prompt, options = {}) {
+  const {
+    steps = 30,
+    cfgScale = 7.5,
+    imageStrength = 0.35,
+  } = options;
+
+  const apiKey = process.env.STABILITY_AI_API_KEY;
+  if (!apiKey) {
+    throw new Error('STABILITY_AI_API_KEY chưa được cấu hình trong .env');
+  }
+
+  let truncatedPrompt = prompt;
+  if (prompt.length > 1900) {
+    console.log(`[Stability AI] Prompt quá dài (${prompt.length} chars), truncating to 1900`);
+    truncatedPrompt = prompt.substring(0, 1900) + '...';
+  }
+
+  const engineId = process.env.STABILITY_AI_IMAGE_ENGINE || process.env.STABILITY_AI_ENGINE || 'stable-diffusion-xl-1024-v1-0';
+  const form = new FormData();
+  form.append('init_image', sourceImageBuffer, {
+    filename: 'house.jpg',
+    contentType: sourceMimeType || 'image/jpeg',
+  });
+  form.append('init_image_mode', 'IMAGE_STRENGTH');
+  form.append('image_strength', String(imageStrength));
+  form.append('text_prompts[0][text]', truncatedPrompt);
+  form.append('text_prompts[0][weight]', '1');
+  form.append('cfg_scale', String(cfgScale));
+  form.append('steps', String(steps));
+  form.append('samples', '1');
+
+  const response = await axios.post(
+    `https://api.stability.ai/v1/generation/${engineId}/image-to-image`,
+    form,
+    {
+      headers: {
+        ...form.getHeaders(),
+        Accept: 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      responseType: 'json',
+      timeout: 120000,
+    }
+  );
+
+  const base64Image = response.data.artifacts?.[0]?.base64;
+  if (!base64Image) {
+    throw new Error('Stability AI không trả về ảnh image-to-image');
+  }
+  return Buffer.from(base64Image, 'base64');
 }
 
 /**
@@ -671,9 +732,188 @@ async function generateImageFromThreeServices(prompt, options = {}) {
   throw new Error(errorMessage);
 }
 
+function extractImageUrlFromText(text) {
+  if (!text || typeof text !== 'string') return null;
+
+  const markdownMatch = text.match(/!\[[^\]]*\]\((https?:\/\/[^)]+)\)/i);
+  if (markdownMatch) return markdownMatch[1];
+
+  const urlMatch = text.match(/https?:\/\/[^\s"'<>)]*/i);
+  return urlMatch ? urlMatch[0] : null;
+}
+
+function extractBase64ImageFromText(text) {
+  if (!text || typeof text !== 'string') return null;
+
+  const dataUrlMatch = text.match(/data:image\/[a-zA-Z0-9.+-]+;base64,([A-Za-z0-9+/=\r\n]+)/);
+  if (dataUrlMatch) return dataUrlMatch[1].replace(/\s/g, '');
+
+  return null;
+}
+
+function findImageResult(value) {
+  if (!value) return null;
+
+  if (typeof value === 'string') {
+    const base64 = extractBase64ImageFromText(value);
+    if (base64) return { type: 'base64', value: base64 };
+
+    const url = extractImageUrlFromText(value);
+    if (url) return { type: 'url', value: url };
+
+    return null;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const result = findImageResult(item);
+      if (result) return result;
+    }
+    return null;
+  }
+
+  if (typeof value === 'object') {
+    if (typeof value.b64_json === 'string') return { type: 'base64', value: value.b64_json };
+    if (typeof value.base64 === 'string') return { type: 'base64', value: value.base64 };
+    if (typeof value.url === 'string') return { type: 'url', value: value.url };
+    if (value.image_url?.url) return { type: 'url', value: value.image_url.url };
+    if (value.imageUrl) return { type: 'url', value: value.imageUrl };
+
+    for (const child of Object.values(value)) {
+      const result = findImageResult(child);
+      if (result) return result;
+    }
+  }
+
+  return null;
+}
+
+async function imageResultToBuffer(result) {
+  if (!result) throw new Error('HQ API không trả về URL hoặc base64 ảnh');
+
+  if (result.type === 'base64') {
+    return Buffer.from(result.value.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, ''), 'base64');
+  }
+
+  const response = await axios.get(result.value, {
+    responseType: 'arraybuffer',
+    timeout: 180000,
+  });
+  return Buffer.from(response.data);
+}
+
+async function generateImageWithHQ(sourceImageBuffer, sourceMimeType, referenceImageBuffer, referenceMimeType, prompt) {
+  const baseUrl = process.env.HQ_IMAGE_API_BASE_URL?.replace(/\/+$/, '');
+  const apiKey = process.env.HQ_IMAGE_API_KEY;
+  const model = process.env.HQ_IMAGE_API_MODEL || 'gemini-3.1-pro-image';
+
+  if (!baseUrl || !apiKey) {
+    throw new Error('Thiếu HQ_IMAGE_API_BASE_URL hoặc HQ_IMAGE_API_KEY');
+  }
+
+  const content = [
+    {
+      type: 'text',
+      text: `${prompt}\n\nUse the uploaded house image as the required source. Preserve the same architecture, camera angle, floor count, windows, doors, roof shape, and proportions. Only repaint/refinish exterior surfaces and remove construction clutter if present. Return exactly one final generated image.`,
+    },
+    {
+      type: 'image_url',
+      image_url: {
+        url: `data:${sourceMimeType || 'image/jpeg'};base64,${sourceImageBuffer.toString('base64')}`,
+      },
+    },
+  ];
+
+  if (referenceImageBuffer && referenceMimeType) {
+    content.push({
+      type: 'text',
+      text: 'Use this reference image only for color/material/style inspiration. Do not copy its architecture.',
+    });
+    content.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:${referenceMimeType};base64,${referenceImageBuffer.toString('base64')}`,
+      },
+    });
+  }
+
+  const response = await axios.post(
+    `${baseUrl}/v1/chat/completions`,
+    {
+      model,
+      messages: [
+        {
+          role: 'user',
+          content,
+        },
+      ],
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 180000,
+    }
+  );
+
+  const imageResult = findImageResult(response.data);
+  return imageResultToBuffer(imageResult);
+}
+
+async function generateImageWithSD35Server(sourceImageBuffer, sourceMimeType, referenceImageBuffer, referenceMimeType, prompt) {
+  const baseUrl = process.env.SD35_API_BASE_URL?.replace(/\/+$/, '');
+  const apiKey = process.env.SD35_API_KEY;
+  const path = process.env.SD35_API_GENERATE_PATH || '/generate';
+
+  if (!baseUrl) {
+    throw new Error('Thiếu SD35_API_BASE_URL cho server SD 3.5 Medium');
+  }
+
+  const form = new FormData();
+  form.append('prompt', prompt);
+  form.append('image', sourceImageBuffer, {
+    filename: 'house.jpg',
+    contentType: sourceMimeType || 'image/jpeg',
+  });
+
+  if (referenceImageBuffer && referenceMimeType) {
+    form.append('reference', referenceImageBuffer, {
+      filename: 'reference.jpg',
+      contentType: referenceMimeType,
+    });
+  }
+
+  const headers = form.getHeaders();
+  if (apiKey) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
+
+  const response = await axios.post(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`, form, {
+    headers,
+    responseType: 'arraybuffer',
+    timeout: 180000,
+  });
+
+  const contentType = response.headers?.['content-type'] || '';
+  const buffer = Buffer.from(response.data);
+  if (contentType.startsWith('image/')) {
+    return buffer;
+  }
+
+  const text = buffer.toString('utf8');
+  let payload = text;
+  if (contentType.includes('application/json') || text.trim().startsWith('{') || text.trim().startsWith('[')) {
+    payload = JSON.parse(text);
+  }
+
+  const imageResult = findImageResult(payload);
+  return imageResultToBuffer(imageResult);
+}
+
 /**
  * Tạo ảnh từ ảnh gốc và prompt (image-to-image)
- * Ưu tiên: Gemini → Stability AI → Other services
+ * Ưu tiên: HQ API → Gemini → Stability AI → Other services
  * @param {Buffer} sourceImageBuffer - Buffer của ảnh gốc
  * @param {string} sourceMimeType - MIME type của ảnh gốc
  * @param {Buffer} referenceImageBuffer - Buffer của ảnh tham khảo (optional)
@@ -681,8 +921,42 @@ async function generateImageFromThreeServices(prompt, options = {}) {
  * @param {string} prompt - Prompt mô tả yêu cầu
  * @returns {Promise<Buffer>} - Buffer của ảnh đã tạo
  */
-async function generateImageFromImages(sourceImageBuffer, sourceMimeType, referenceImageBuffer, referenceMimeType, prompt) {
+async function generateImageFromImages(sourceImageBuffer, sourceMimeType, referenceImageBuffer, referenceMimeType, prompt, options = {}) {
   const { GoogleGenerativeAI } = require('@google/generative-ai');
+  const selectedProvider = normalizeImageProvider(options.provider);
+
+  if (selectedProvider === 'hq') {
+    console.log('[Image-to-Image] 🎯 Dùng provider HQ API theo lựa chọn người dùng...');
+    return generateImageWithHQ(sourceImageBuffer, sourceMimeType, referenceImageBuffer, referenceMimeType, prompt);
+  }
+
+  if (selectedProvider === 'stability') {
+    console.log('[Image-to-Image] 🎯 Dùng provider Stability AI theo lựa chọn người dùng...');
+    return generateImageWithStabilityImageToImage(sourceImageBuffer, sourceMimeType, prompt, options);
+  }
+
+  if (selectedProvider === 'sd35') {
+    console.log('[Image-to-Image] 🎯 Dùng provider SD 3.5 Server theo lựa chọn người dùng...');
+    return generateImageWithSD35Server(sourceImageBuffer, sourceMimeType, referenceImageBuffer, referenceMimeType, prompt);
+  }
+
+  if (process.env.HQ_IMAGE_API_KEY) {
+    try {
+      console.log('[Image-to-Image] 🎯 Thử HQ API (ưu tiên)...');
+      const buffer = await generateImageWithHQ(
+        sourceImageBuffer,
+        sourceMimeType,
+        referenceImageBuffer,
+        referenceMimeType,
+        prompt
+      );
+      console.log('[Image-to-Image] ✅ HQ API thành công!');
+      return buffer;
+    } catch (hqError) {
+      console.log(`[Image-to-Image] ❌ HQ API lỗi: ${hqError.response?.data?.error?.message || hqError.message}`);
+      console.log('[Image-to-Image] 🔄 Chuyển sang Gemini...');
+    }
+  }
 
   // 1️⃣ Thử Gemini trước (ưu tiên - hỗ trợ image-to-image tốt nhất)
   const geminiApiKey = process.env.GOOGLE_API_KEY1;
@@ -728,41 +1002,11 @@ async function generateImageFromImages(sourceImageBuffer, sourceMimeType, refere
     }
   }
 
-  // 2️⃣ Fallback: Stability AI (text-to-image với enhanced prompt)
+  // 2️⃣ Fallback: Stability AI image-to-image
   if (process.env.STABILITY_AI_API_KEY) {
     try {
-      console.log('[Image-to-Image] 🎯 Thử Stability AI...');
-      
-      // Enhance prompt nếu có GOOGLE_API_KEY
-      let enhancedPrompt = prompt;
-      const textApiKey = process.env.GOOGLE_API_KEY;
-      if (textApiKey) {
-        try {
-          const genAI = new GoogleGenerativeAI(textApiKey);
-          const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-          const content = [
-            {
-              inlineData: {
-                mimeType: sourceMimeType,
-                data: sourceImageBuffer.toString('base64'),
-              },
-            },
-            { 
-              text: `Analyze this house image and create a detailed Stable Diffusion prompt to repaint it. Requirements: ${prompt}. 
-              Output only the prompt (100-200 words) with technical keywords, no explanation.` 
-            },
-          ];
-
-          const result = await model.generateContent(content);
-          enhancedPrompt = result.response.text().trim();
-          console.log('[Image-to-Image] Enhanced prompt với Gemini');
-        } catch (e) {
-          console.log('[Image-to-Image] Không thể enhance prompt, dùng prompt gốc');
-        }
-      }
-
-      const buffer = await generateImageWithStabilityAI(enhancedPrompt, { width: 1024, height: 1024 });
+      console.log('[Image-to-Image] 🎯 Thử Stability AI image-to-image...');
+      const buffer = await generateImageWithStabilityImageToImage(sourceImageBuffer, sourceMimeType, prompt, options);
       console.log('[Image-to-Image] ✅ Stability AI thành công!');
       return buffer;
     } catch (stabilityError) {
@@ -802,8 +1046,11 @@ module.exports = {
   analyzeImage, // Phân tích ảnh
   analyzeImageWithGemini, // Phân tích ảnh bằng Gemini
   generateImageWithStabilityAI,
+  generateImageWithStabilityImageToImage,
   generateImageWithReplicate,
   generateImageWithHuggingFace,
+  generateImageWithHQ,
+  generateImageWithSD35Server,
   generateImageWithGemini, // Tạo ảnh bằng Gemini
   generateImageExternal, // Auto-select service
   generateImageFromThreeServices, // Tạo 3 ảnh từ 3 services

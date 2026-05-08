@@ -296,7 +296,7 @@ function useWizardFlow({ steps = [], pushToast = () => { }, user } = {}) {
     }
   }, []);
 
-  const handleGenerateFinal = useCallback(async () => {
+  const handleGenerateFinal = useCallback(async (provider = "auto") => {
     if (!wizardData.houseImage?.file) {
       setApiMessages((prev) => ({
         ...prev,
@@ -332,7 +332,8 @@ function useWizardFlow({ steps = [], pushToast = () => { }, user } = {}) {
         tempId,
         wizardData.houseImage.file,
         wizardData.requirements,
-        user.token
+        user.token,
+        provider
       );
 
       if (!response || response.ok === false || response.error) {

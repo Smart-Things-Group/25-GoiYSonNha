@@ -19,10 +19,11 @@ export async function generateStyle(tempId, requirementsArray) {
   return res.json();
 }
 
-export async function generateFinal(tempId, file, requirementsObj, token) {
+export async function generateFinal(tempId, file, requirementsObj, token, provider = "auto") {
   const form = new FormData();
   form.append("tempId", tempId);
   form.append("house", file);
+  form.append("provider", provider);
 
   if (requirementsObj) {
     const requirements = Array.isArray(requirementsObj)
