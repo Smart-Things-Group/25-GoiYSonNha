@@ -272,11 +272,139 @@ export async function deleteLibraryItem(id, token = "") {
   const response = await fetch(`${API_URL}/api/admin/library/${id}`, {
     method: "DELETE",
     headers: buildHeaders(token),
-  });  const data = await parseJsonSafely(response);
+  });
+  const data = await parseJsonSafely(response);
   // Xử lý lỗi 401 - Token hết hạn
   handleUnauthorized(response, data);
   if (!response.ok || data?.ok === false) {
     const message = data?.message || "Không thể xóa mẫu nhà";
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+
+const buildFormHeaders = (token = "") => {
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+};
+
+export async function fetchPaintBrands(token = "") {
+  const response = await fetch(`${API_URL}/api/admin/paint-brands`, {
+    method: "GET",
+    headers: buildHeaders(token),
+  });
+  const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
+  if (!response.ok || data?.ok === false) {
+    const message = data?.message || "Không thể tải danh sách thương hiệu sơn";
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+
+export async function createPaintBrand(formData, token = "") {
+  const response = await fetch(`${API_URL}/api/admin/paint-brands`, {
+    method: "POST",
+    headers: buildFormHeaders(token),
+    body: formData,
+  });
+  const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
+  if (!response.ok || data?.ok === false) {
+    throw new Error(data?.message || "Không thể thêm thương hiệu sơn");
+  }
+  return data;
+}
+
+export async function updatePaintBrand(id, formData, token = "") {
+  const response = await fetch(`${API_URL}/api/admin/paint-brands/${id}`, {
+    method: "PUT",
+    headers: buildFormHeaders(token),
+    body: formData,
+  });
+  const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
+  if (!response.ok || data?.ok === false) {
+    throw new Error(data?.message || "Không thể cập nhật thương hiệu sơn");
+  }
+  return data;
+}
+
+export async function deletePaintBrand(id, token = "") {
+  const response = await fetch(`${API_URL}/api/admin/paint-brands/${id}`, {
+    method: "DELETE",
+    headers: buildHeaders(token),
+  });
+  const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
+  if (!response.ok || data?.ok === false) {
+    const message = data?.message || "Không thể xóa thương hiệu sơn";
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+
+export async function fetchPaintColors(params = {}, token = "") {
+  const queryString = buildQueryString(params);
+  const response = await fetch(`${API_URL}/api/admin/paint-colors${queryString}`, {
+    method: "GET",
+    headers: buildHeaders(token),
+  });
+  const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
+  if (!response.ok || data?.ok === false) {
+    const message = data?.message || "Không thể tải danh sách màu sơn";
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+
+export async function createPaintColor(formData, token = "") {
+  const response = await fetch(`${API_URL}/api/admin/paint-colors`, {
+    method: "POST",
+    headers: buildFormHeaders(token),
+    body: formData,
+  });
+  const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
+  if (!response.ok || data?.ok === false) {
+    throw new Error(data?.message || "Không thể thêm màu sơn");
+  }
+  return data;
+}
+
+export async function updatePaintColor(id, formData, token = "") {
+  const response = await fetch(`${API_URL}/api/admin/paint-colors/${id}`, {
+    method: "PUT",
+    headers: buildFormHeaders(token),
+    body: formData,
+  });
+  const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
+  if (!response.ok || data?.ok === false) {
+    throw new Error(data?.message || "Không thể cập nhật màu sơn");
+  }
+  return data;
+}
+
+export async function deletePaintColor(id, token = "") {
+  const response = await fetch(`${API_URL}/api/admin/paint-colors/${id}`, {
+    method: "DELETE",
+    headers: buildHeaders(token),
+  });
+  const data = await parseJsonSafely(response);
+  handleUnauthorized(response, data);
+  if (!response.ok || data?.ok === false) {
+    const message = data?.message || "Không thể xóa màu sơn";
     const error = new Error(message);
     error.status = response.status;
     throw error;

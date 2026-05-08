@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import AdminDashboardPage from "./AdminDashboardPage";
 import AdminUserManagement from "./AdminUserManagement";
 import AdminLibraryManager from "./AdminLibraryManager";
+import AdminPaintManagement from "./AdminPaintManagement";
 
 const THEME_STORAGE_KEY = "exteriorTheme";
 const THEMES = { LIGHT: "light", DARK: "dark" };
@@ -42,6 +43,15 @@ function Icon({ name, size = 18 }) {
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <circle cx="8.5" cy="8.5" r="1.5" />
           <path d="m21 15-5-5L5 21" />
+        </svg>
+      );
+    case "paint":
+      return (
+        <svg {...props}>
+          <path d="M4 15.5c3.5-5.5 8.8-8.9 15.5-10" />
+          <path d="M7.5 18.5c2.8-4.2 7-6.9 12-8" />
+          <path d="M5 16.5c1.8 2.2 4.8 3.1 8 2.1" />
+          <circle cx="6" cy="16" r="2.5" />
         </svg>
       );
     case "exit":
@@ -113,6 +123,7 @@ function AdminLayout({ user, onExit }) {
     { id: "dashboard", label: "Bảng điều khiển", icon: "dashboard", section: "Tổng quan" },
     { id: "users", label: "Tài khoản người dùng", icon: "users", section: "Quản lý" },
     { id: "library", label: "Thư viện Mẫu", icon: "library", section: "Quản lý" },
+    { id: "paint", label: "Sơn & màu sơn", icon: "paint", section: "Quản lý" },
   ];
 
   const currentSectionLabel =
@@ -120,7 +131,9 @@ function AdminLayout({ user, onExit }) {
       ? "Bảng điều khiển"
       : adminView === "users"
       ? "Người dùng"
-      : "Thư viện mẫu nhà";
+      : adminView === "library"
+      ? "Thư viện mẫu nhà"
+      : "Sơn & màu sơn";
 
   return (
     <div className="admin-shell">
@@ -200,6 +213,8 @@ function AdminLayout({ user, onExit }) {
             <AdminUserManagement token={user.token} />
           ) : adminView === "library" ? (
             <AdminLibraryManager token={user.token} />
+          ) : adminView === "paint" ? (
+            <AdminPaintManagement token={user.token} />
           ) : null}
         </main>
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import useAdminUsers from "../hooks/useAdminUsers";
 
 const ROLE_FILTERS = [
@@ -11,7 +11,7 @@ function formatDate(value) {
   if (!value) return "Chưa cập nhật";
   try {
     return new Date(value).toLocaleString("vi-VN", { hour12: false });
-  } catch (_error) {
+  } catch {
     return value;
   }
 }
@@ -25,6 +25,48 @@ function deriveNameFromEmail(email = "") {
     .filter(Boolean)
     .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
     .join(" ");
+}
+
+function AdminModal({ title, children, onClose }) {
+  return (
+    <div
+      role="presentation"
+      onMouseDown={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: "var(--z-modal)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+        background: "var(--color-bg-overlay)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="user-modal-title"
+        className="admin-card"
+        onMouseDown={(event) => event.stopPropagation()}
+        style={{
+          width: "min(560px, 100%)",
+          maxHeight: "calc(100vh - 48px)",
+          overflowY: "auto",
+          boxShadow: "var(--shadow-xl)",
+        }}
+      >
+        <header className="admin-card__header" style={{ alignItems: "center" }}>
+          <h3 id="user-modal-title">{title}</h3>
+          <button type="button" className="admin-button admin-button--ghost" onClick={onClose}>
+            Đóng
+          </button>
+        </header>
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function AdminUserManagement({ token }) {
@@ -42,10 +84,9 @@ function AdminUserManagement({ token }) {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [selectedUserId, setSelectedUserId] = useState(null);
-  const [newUser, setNewUser] = useState({ email: "", password: "", role: "user" });
-  const [editForm, setEditForm] = useState({ email: "", password: "", role: "user" });
   const [actionMessage, setActionMessage] = useState("");
+  const [modalMode, setModalMode] = useState(null);
+  const [userForm, setUserForm] = useState({ id: "", email: "", password: "", role: "user" });
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -54,29 +95,23 @@ function AdminUserManagement({ token }) {
     return () => clearTimeout(handler);
   }, [search, roleFilter, refresh]);
 
-  useEffect(() => {
-    if (!users.length) {
-      setSelectedUserId(null);
-      return;
-    }
-    if (!selectedUserId || !users.some((user) => user.id === selectedUserId)) {
-      setSelectedUserId(users[0].id);
-    }
-  }, [users, selectedUserId]);
-
-  const selectedUser = useMemo(() => {
-    return users.find((user) => user.id === selectedUserId) || null;
-  }, [users, selectedUserId]);
+  const closeModal = useCallback(() => {
+    setModalMode(null);
+    setUserForm({ id: "", email: "", password: "", role: "user" });
+  }, []);
 
   useEffect(() => {
-    if (selectedUser) {
-      setEditForm({
-        email: selectedUser.email,
-        password: "",
-        role: selectedUser.role,
-      });
-    }
-  }, [selectedUser]);
+    if (!modalMode) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !loading) {
+        closeModal();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closeModal, loading, modalMode]);
 
   const stats = useMemo(() => {
     const totalUsers = meta.total || 0;
@@ -87,368 +122,257 @@ function AdminUserManagement({ token }) {
       0
     );
     return [
-      {
-        label: "Tổng tài khoản",
-        value: totalUsers,
-        description: "Toàn bộ người dùng",
-      },
-      {
-        label: "Admin",
-        value: adminCount,
-        description: "Quyền quản trị",
-      },
-      {
-        label: "Người dùng",
-        value: userCount,
-        description: "Tài khoản tiêu chuẩn",
-      },
-      {
-        label: "Lượt sinh",
-        value: totalGenerations,
-        description: "Tổng lượt hiện có",
-      },
+      { label: "Tổng tài khoản", value: totalUsers, description: "Toàn bộ người dùng" },
+      { label: "Admin", value: adminCount, description: "Quyền quản trị" },
+      { label: "Người dùng", value: userCount, description: "Tài khoản tiêu chuẩn" },
+      { label: "Lượt sinh", value: totalGenerations, description: "Tổng lượt trang hiện tại" },
     ];
   }, [meta, users]);
 
-  const handleCreate = async (event) => {
+  const currentRoleQuery = roleFilter === "all" ? "" : roleFilter;
+  const totalPages = Math.max(1, Math.ceil((meta.total || 0) / (meta.pageSize || 20)));
+  const from = meta.total ? (meta.page - 1) * meta.pageSize + 1 : 0;
+  const to = Math.min(meta.page * meta.pageSize, meta.total || 0);
+
+  const openCreateModal = () => {
+    setActionMessage("");
+    setUserForm({ id: "", email: "", password: "", role: "user" });
+    setModalMode("create");
+  };
+
+  const openEditModal = (user) => {
+    setActionMessage("");
+    setUserForm({ id: user.id, email: user.email, password: "", role: user.role });
+    setModalMode("edit");
+  };
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setActionMessage("");
-    if (!newUser.email || !newUser.password) {
-      setActionMessage("Cần nhập email và mật khẩu");
+
+    if (!userForm.email || (modalMode === "create" && !userForm.password)) {
+      setActionMessage("Cần nhập đủ email và mật khẩu");
       return;
     }
-    const result = await createUser(newUser);
-    if (result?.ok) {
-      setNewUser({ email: "", password: "", role: "user" });
-      setActionMessage("Đã thêm tài khoản mới");
-    } else {
-      setActionMessage(result?.message || "Không tạo được tài khoản");
-    }
-  };
 
-  const handleUpdate = async (event) => {
-    event.preventDefault();
-    if (!selectedUser) return;
     const payload = {
-      email: editForm.email,
-      role: editForm.role,
+      email: userForm.email,
+      role: userForm.role,
     };
-    if (editForm.password) payload.password = editForm.password;
-    setActionMessage("");
-    const result = await updateUser(selectedUser.id, payload);
+    if (userForm.password) payload.password = userForm.password;
+
+    const result = modalMode === "create"
+      ? await createUser(payload)
+      : await updateUser(userForm.id, payload);
+
     if (result?.ok) {
-      setEditForm({ ...editForm, password: "" });
-      setActionMessage("Đã cập nhật tài khoản");
-    } else {
-      setActionMessage(result?.message || "Không cập nhật được");
+      setActionMessage(modalMode === "create" ? "Đã thêm tài khoản mới" : "Đã cập nhật tài khoản");
+      closeModal();
+      return;
     }
+
+    setActionMessage(result?.message || "Không thể lưu tài khoản");
   };
 
-  const handleDelete = async () => {
-    if (!selectedUser) return;
-    const result = await removeUser(selectedUser.id);
-    if (result?.ok) {
-      setActionMessage("Đã xóa tài khoản");
-    } else {
-      setActionMessage(result?.message || "Không xóa được tài khoản");
-    }
+  const handleDelete = async (user) => {
+    if (!confirm(`Xóa tài khoản ${user.email}?`)) return;
+    const result = await removeUser(user.id);
+    setActionMessage(result?.ok ? "Đã xóa tài khoản" : result?.message || "Không xóa được tài khoản");
   };
 
-  const handlePromote = async () => {
-    if (!selectedUser) return;
-    const result = await updateRole(selectedUser.id, "admin");
-    if (result?.ok) {
-      setActionMessage("Đã cấp quyền admin");
-    } else {
-      setActionMessage(result?.message || "Không thể cấp quyền");
-    }
+  const handlePromote = async (user) => {
+    const result = await updateRole(user.id, "admin");
+    setActionMessage(result?.ok ? "Đã cấp quyền admin" : result?.message || "Không thể cấp quyền");
+  };
+
+  const goToPage = (page) => {
+    refresh({ page, search, role: currentRoleQuery });
   };
 
   return (
     <section className="admin-surface" aria-label="Quản lý tài khoản">
-      <div className="admin-panel admin-panel--split">
-        <article className="admin-card admin-card--users">
-          <header className="admin-card__header">
-            <div>
-              <p className="admin-eyebrow">Người dùng</p>
-              <h2>Ảnh hưởng toàn hệ thống</h2>
-            </div>
-            <span className="admin-pill">{meta.total} tài khoản</span>
-          </header>
-          <p className="admin-card__lead">
-            Theo dõi phân bố quyền truy cập và mức sử dụng AI của từng người dùng.
-          </p>
-          <div className="admin-grid admin-grid--stats">
-            {stats.map((item) => (
-              <UserStat key={item.label} {...item} />
-            ))}
+      <div className="admin-panel" style={{ marginBottom: "12px", padding: "18px 22px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+          <div>
+            <p className="admin-eyebrow">Người dùng</p>
+            <h2 style={{ margin: 0 }}>Tài khoản người dùng</h2>
           </div>
-        </article>
-
-        <aside className="admin-card admin-card--filters">
-          <label className="admin-input__label" htmlFor="user-search">
-            Tìm kiếm
-          </label>
-          <div className="admin-input">
-            <input
-              id="user-search"
-              type="search"
-              placeholder="Nhập email hoặc tên người dùng"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+            {actionMessage ? <span className="admin-card__meta">{actionMessage}</span> : null}
+            <button
+              type="button"
+              className="admin-button admin-button--ghost"
+              onClick={() => refresh({ search, role: currentRoleQuery })}
+              disabled={loading}
+            >
+              Làm mới
+            </button>
+            <button type="button" className="admin-button" onClick={openCreateModal} disabled={loading}>
+              + Thêm tài khoản
+            </button>
           </div>
-
-          <p className="admin-eyebrow">Phân quyền</p>
-          <div className="admin-chip-group admin-chip-group--wrap">
-            {ROLE_FILTERS.map((filter) => (
-              <button
-                key={filter.value}
-                type="button"
-                className={`admin-chip ${roleFilter === filter.value ? "is-active" : ""}`}
-                onClick={() => setRoleFilter(filter.value)}
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            className="admin-button"
-            onClick={() => refresh({ search, role: roleFilter })}
-          >
-            Làm mới dữ liệu
-          </button>
-          {loading ? (
-            <p className="admin-card__meta">Đang đồng bộ...</p>
-          ) : (
-            <p className="admin-card__meta">
-              {meta.total} tài khoản • Cập nhật {new Date().toLocaleTimeString("vi-VN")}
-            </p>
-          )}
-        </aside>
+        </div>
       </div>
 
-      <div className="admin-panel admin-panel--columns">
-        <article className="admin-card admin-card--table">
-          <header className="admin-card__header admin-card__header--table">
-            <div>
-              <p className="admin-eyebrow">Danh sách người dùng</p>
-              <h3>Kết quả lọc hiện tại</h3>
+      <div className="admin-grid admin-grid--stats" style={{ marginBottom: "12px" }}>
+        {stats.map((item) => (
+          <UserStat key={item.label} {...item} />
+        ))}
+      </div>
+
+      <div className="admin-card" style={{ marginBottom: "12px", padding: "14px 20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 1.5fr) minmax(220px, 1fr)", gap: "14px", alignItems: "end" }}>
+          <label>
+            <span className="admin-input__label">Tìm kiếm</span>
+            <div className="admin-input">
+              <input
+                type="search"
+                placeholder="Nhập email hoặc tên người dùng"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
             </div>
-            <span className="admin-pill admin-pill--ghost">{users.length} mục</span>
-          </header>
+          </label>
+          <label>
+            <span className="admin-input__label">Phân quyền</span>
+            <select
+              className="admin-input"
+              value={roleFilter}
+              onChange={(event) => setRoleFilter(event.target.value)}
+            >
+              {ROLE_FILTERS.map((filter) => (
+                <option key={filter.value} value={filter.value}>{filter.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </div>
 
-          {error ? <div className="admin-empty">{error}</div> : null}
+      <article className="admin-card admin-card--table">
+        <header className="admin-card__header admin-card__header--table">
+          <div>
+            <p className="admin-eyebrow">Danh sách người dùng</p>
+            <h3>Hiển thị {users.length}/{meta.total || 0} tài khoản</h3>
+          </div>
+          <span className="admin-pill admin-pill--ghost">Trang {meta.page}/{totalPages}</span>
+        </header>
 
-          {users.length ? (
-            <div className="admin-user-list">
-              {users.map((user) => (
-                <button
-                  key={user.id}
-                  type="button"
-                  className={`admin-user ${selectedUserId === user.id ? "is-active" : ""}`}
-                  onClick={() => setSelectedUserId(user.id)}
-                >
-                  <div className="admin-user__avatar">
-                    {deriveNameFromEmail(user.email).slice(0, 2)}
-                  </div>
-                  <div className="admin-user__body">
-                    <div className="admin-user__row">
-                      <strong>{deriveNameFromEmail(user.email)}</strong>
-                      <span
-                        className={`admin-badge admin-badge--${
-                          user.role === "admin" ? "accent" : "muted"
-                        }`}
-                      >
+        {error ? <div className="admin-empty">{error}</div> : null}
+
+        {users.length ? (
+          <>
+            <div className="admin-table" role="table" style={{ minHeight: 560 }}>
+              <div
+                className="admin-table__head"
+                role="rowgroup"
+                style={{ gridTemplateColumns: "1.7fr 0.8fr 0.9fr 1fr 1.3fr" }}
+              >
+                <span role="columnheader">Tài khoản</span>
+                <span role="columnheader">Quyền</span>
+                <span role="columnheader">Lượt sinh</span>
+                <span role="columnheader">Tạo lúc</span>
+                <span role="columnheader">Actions</span>
+              </div>
+              <div className="admin-table__body" role="rowgroup">
+                {users.map((user) => (
+                  <div
+                    key={user.id}
+                    className="admin-table__row"
+                    role="row"
+                    style={{ gridTemplateColumns: "1.7fr 0.8fr 0.9fr 1fr 1.3fr" }}
+                  >
+                    <div className="admin-table__cell" role="cell" data-label="Tài khoản">
+                      <p className="admin-table__title">{deriveNameFromEmail(user.email)}</p>
+                      <p className="admin-table__muted">{user.email}</p>
+                    </div>
+                    <div className="admin-table__cell" role="cell" data-label="Quyền">
+                      <span className={`admin-badge admin-badge--${user.role === "admin" ? "accent" : "muted"}`}>
                         {user.role === "admin" ? "Admin" : "User"}
                       </span>
                     </div>
-                    <p>{user.email}</p>
-                    <div className="admin-user__meta">
-                      <span>Lượt sinh: {user.generationCount || 0}</span>
-                      <span>Tạo: {formatDate(user.createdAt)}</span>
+                    <div className="admin-table__cell" role="cell" data-label="Lượt sinh">
+                      <p className="admin-table__value">{user.generationCount || 0}</p>
+                      <p className="admin-table__muted">Gần nhất: {formatDate(user.lastGenerationAt)}</p>
+                    </div>
+                    <div className="admin-table__cell" role="cell" data-label="Tạo lúc">
+                      <p className="admin-table__muted">{formatDate(user.createdAt)}</p>
+                    </div>
+                    <div className="admin-table__cell admin-table__cell--action" role="cell" data-label="Actions">
+                      <button type="button" className="admin-button admin-button--ghost" onClick={() => openEditModal(user)} disabled={loading}>Sửa</button>
+                      {user.role !== "admin" ? (
+                        <button type="button" className="admin-button admin-button--ghost" onClick={() => handlePromote(user)} disabled={loading}>Cấp admin</button>
+                      ) : null}
+                      <button type="button" className="admin-button admin-button--danger" onClick={() => handleDelete(user)} disabled={loading}>Xóa</button>
                     </div>
                   </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="admin-empty">
-              {loading
-                ? "Đang tải dữ liệu người dùng..."
-                : "Không có người dùng nào phù hợp bộ lọc."}
-            </div>
-          )}
-        </article>
-
-        <aside className="admin-card admin-card--spotlight">
-          {selectedUser ? (
-            <div>
-              <header className="admin-card__header admin-card__header--tight">
-                <div>
-                  <p className="admin-eyebrow">Chi tiết</p>
-                  <h3>{deriveNameFromEmail(selectedUser.email)}</h3>
-                </div>
-                <span className="admin-pill">
-                  {selectedUser.role === "admin" ? "Admin" : "User"}
-                </span>
-              </header>
-
-              <form className="admin-form" onSubmit={handleUpdate}>
-                <label className="admin-input__label" htmlFor="edit-email">
-                  Email
-                </label>
-                <div className="admin-input">
-                  <input
-                    id="edit-email"
-                    type="email"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <label className="admin-input__label" htmlFor="edit-password">
-                  Mật khẩu mới (tùy chọn)
-                </label>
-                <div className="admin-input">
-                  <input
-                    id="edit-password"
-                    type="password"
-                    value={editForm.password}
-                    onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                  />
-                </div>
-
-                <label className="admin-input__label" htmlFor="edit-role">
-                  Quyền
-                </label>
-                <div className="admin-input">
-                  <select
-                    id="edit-role"
-                    value={editForm.role}
-                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-
-                <div className="admin-action-row">
-                  <button type="submit" className="admin-button" disabled={loading}>
-                    Cập nhật
-                  </button>
-                  <button
-                    type="button"
-                    className="admin-button admin-button--ghost"
-                    onClick={handlePromote}
-                    disabled={loading || selectedUser.role === "admin"}
-                  >
-                    Cấp quyền admin
-                  </button>
-                  <button
-                    type="button"
-                    className="admin-button admin-button--ghost"
-                    onClick={handleDelete}
-                    disabled={loading}
-                  >
-                    Xóa
-                  </button>
-                </div>
-              </form>
-
-              <ul className="admin-detail-list">
-                <li>
-                  <p>ID</p>
-                  <strong>{selectedUser.id}</strong>
-                </li>
-                <li>
-                  <p>Email</p>
-                  <strong>{selectedUser.email}</strong>
-                </li>
-                <li>
-                  <p>Tạo lúc</p>
-                  <strong>{formatDate(selectedUser.createdAt)}</strong>
-                </li>
-                <li>
-                  <p>Hoạt động cuối</p>
-                  <strong>{formatDate(selectedUser.lastGenerationAt)}</strong>
-                </li>
-                <li>
-                  <p>Tổng lượt sinh</p>
-                  <strong>{selectedUser.generationCount || 0}</strong>
-                </li>
-              </ul>
-            </div>
-          ) : (
-            <div className="admin-empty">Chọn một tài khoản để xem chi tiết hoặc chỉnh sửa.</div>
-          )}
-        </aside>
-      </div>
-
-      <article className="admin-card">
-        <header className="admin-card__header">
-          <div>
-            <p className="admin-eyebrow">Thêm tài khoản</p>
-            <h3>Tạo nhanh</h3>
-          </div>
-        </header>
-        <form className="admin-form" onSubmit={handleCreate}>
-          <div className="admin-grid admin-grid--columns">
-            <div>
-              <label className="admin-input__label" htmlFor="new-email">
-                Email
-              </label>
-              <div className="admin-input">
-                <input
-                  id="new-email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  required
-                />
+                ))}
               </div>
             </div>
-            <div>
-              <label className="admin-input__label" htmlFor="new-password">
-                Mật khẩu
-              </label>
-              <div className="admin-input">
-                <input
-                  id="new-password"
-                  type="password"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  required
-                />
-              </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "12px", padding: "16px 20px" }}>
+              <span className="admin-table__muted">{from}-{to} / {meta.total || 0} mục</span>
+              <button type="button" className="admin-button admin-button--ghost" onClick={() => goToPage(meta.page - 1)} disabled={loading || meta.page <= 1}>Trước</button>
+              <span className="admin-badge admin-badge--accent">{meta.page}</span>
+              <button type="button" className="admin-button admin-button--ghost" onClick={() => goToPage(meta.page + 1)} disabled={loading || meta.page >= totalPages}>Sau</button>
             </div>
-            <div>
-              <label className="admin-input__label" htmlFor="new-role">
-                Quyền
-              </label>
-              <div className="admin-input">
-                <select
-                  id="new-role"
-                  value={newUser.role}
-                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-            </div>
+          </>
+        ) : (
+          <div className="admin-empty">
+            {loading ? "Đang tải dữ liệu người dùng..." : "Không có người dùng nào phù hợp bộ lọc."}
           </div>
-          <div className="admin-action-row">
-            <button type="submit" className="admin-button" disabled={loading}>
-              Thêm tài khoản
-            </button>
-            {actionMessage ? <span className="admin-card__meta">{actionMessage}</span> : null}
-          </div>
-        </form>
+        )}
       </article>
+
+      {modalMode && (
+        <AdminModal
+          title={modalMode === "create" ? "Thêm tài khoản" : "Chỉnh sửa tài khoản"}
+          onClose={closeModal}
+        >
+          <form className="admin-form" onSubmit={handleSubmit}>
+            <label className="admin-input__label" htmlFor="user-email">Email</label>
+            <div className="admin-input">
+              <input
+                id="user-email"
+                type="email"
+                value={userForm.email}
+                onChange={(event) => setUserForm({ ...userForm, email: event.target.value })}
+                required
+              />
+            </div>
+
+            <label className="admin-input__label" htmlFor="user-password">
+              {modalMode === "create" ? "Mật khẩu" : "Mật khẩu mới (tùy chọn)"}
+            </label>
+            <div className="admin-input">
+              <input
+                id="user-password"
+                type="password"
+                value={userForm.password}
+                onChange={(event) => setUserForm({ ...userForm, password: event.target.value })}
+                required={modalMode === "create"}
+              />
+            </div>
+
+            <label className="admin-input__label" htmlFor="user-role">Quyền</label>
+            <div className="admin-input">
+              <select
+                id="user-role"
+                value={userForm.role}
+                onChange={(event) => setUserForm({ ...userForm, role: event.target.value })}
+              >
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <div className="admin-action-row">
+              <button type="button" className="admin-button admin-button--ghost" onClick={closeModal} disabled={loading}>Hủy</button>
+              <button type="submit" className="admin-button" disabled={loading}>
+                {loading ? "Đang xử lý..." : modalMode === "create" ? "Thêm tài khoản" : "Cập nhật"}
+              </button>
+            </div>
+          </form>
+        </AdminModal>
+      )}
     </section>
   );
 }

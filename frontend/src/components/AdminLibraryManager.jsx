@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   createLibraryItem,
   fetchAdminLibrary,
@@ -35,7 +35,7 @@ function AdminLibraryManager({ token }) {
   const [previewUrl, setPreviewUrl] = useState(null);
 
   // Load danh sách thư viện
-  const loadLibrary = async () => {
+  const loadLibrary = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetchAdminLibrary(token);
@@ -49,14 +49,14 @@ function AdminLibraryManager({ token }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pushToast, token]);
 
   useEffect(() => {
     loadLibrary();
-  }, [token]);
+  }, [loadLibrary]);
 
   // Reset form
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     // Cleanup preview URL nếu là blob URL
     if (previewUrl && previewUrl.startsWith("blob:")) {
       URL.revokeObjectURL(previewUrl);
@@ -66,7 +66,7 @@ function AdminLibraryManager({ token }) {
     setPreviewUrl(null);
     setEditingId(null);
     setIsFormOpen(false);
-  };
+  }, [previewUrl]);
 
   // Xử lý chọn file
   const handleFileChange = (e) => {
@@ -91,13 +91,26 @@ function AdminLibraryManager({ token }) {
     };
   }, [previewUrl]);
 
+  useEffect(() => {
+    if (!isFormOpen) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !loading) {
+        resetForm();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFormOpen, loading, resetForm]);
+
   // Xử lý submit form (thêm mới hoặc cập nhật)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     // Thông báo ngay khi bấm lưu để người dùng biết đang xử lý
-    const progressId = pushToast({
+    pushToast({
       id: "library-progress",
       variant: "info",
       title: editingId ? "Đang cập nhật" : "Đang thêm mới",
@@ -208,6 +221,10 @@ function AdminLibraryManager({ token }) {
             type="button"
             className="admin-button"
             onClick={() => {
+              if (isFormOpen) {
+                resetForm();
+                return;
+              }
               resetForm();
               setIsFormOpen(true);
             }}
@@ -218,116 +235,149 @@ function AdminLibraryManager({ token }) {
         </div>
       </div>
 
-      {/* Form thêm/sửa */}
       {isFormOpen && (
-        <div className="admin-card" style={{ marginBottom: "24px" }}>
-          <header className="admin-card__header">
-            <h3>{editingId ? "Chỉnh sửa mẫu nhà" : "Thêm mẫu nhà mới"}</h3>
-          </header>
-          <form onSubmit={handleSubmit}>
-            <div style={{ display: "grid", gap: "16px" }}>
-              {/* Chọn vùng miền */}
-              <label>
-                <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
-                  Vùng miền
-                </span>
-                <select
-                  value={formData.regionName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, regionName: e.target.value })
-                  }
-                  className="admin-input"
-                  required
-                >
-                  {REGION_OPTIONS.map((region) => (
-                    <option key={region} value={region}>
-                      {region}
-                    </option>
-                  ))}
-                </select>
-              </label>
+        <div
+          role="presentation"
+          onMouseDown={resetForm}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: "var(--z-modal)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+            background: "var(--color-bg-overlay)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="library-modal-title"
+            className="admin-card"
+            onMouseDown={(event) => event.stopPropagation()}
+            style={{
+              width: "min(720px, 100%)",
+              maxHeight: "calc(100vh - 48px)",
+              overflowY: "auto",
+              boxShadow: "var(--shadow-xl)",
+            }}
+          >
+            <header className="admin-card__header" style={{ alignItems: "center" }}>
+              <h3 id="library-modal-title">
+                {editingId ? "Chỉnh sửa mẫu nhà" : "Thêm mẫu nhà mới"}
+              </h3>
+              <button
+                type="button"
+                className="admin-button admin-button--ghost"
+                onClick={resetForm}
+                disabled={loading}
+                aria-label="Đóng form"
+              >
+                Đóng
+              </button>
+            </header>
+            <form onSubmit={handleSubmit}>
+              <div style={{ display: "grid", gap: "16px" }}>
+                <label>
+                  <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
+                    Vùng miền
+                  </span>
+                  <select
+                    value={formData.regionName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, regionName: e.target.value })
+                    }
+                    className="admin-input"
+                    required
+                  >
+                    {REGION_OPTIONS.map((region) => (
+                      <option key={region} value={region}>
+                        {region}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              {/* Upload ảnh */}
-              <label>
-                <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
-                  Ảnh mẫu nhà {editingId && "(Để trống nếu giữ ảnh cũ)"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="admin-input"
-                  required={!editingId}
-                />
-                {previewUrl && (
-                  <div style={{ marginTop: "12px" }}>
-                    <img
-                      src={previewUrl}
-                      alt="Preview"
-                      style={{
-                        maxWidth: "300px",
-                        maxHeight: "200px",
-                        borderRadius: "8px",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </div>
-                )}
-              </label>
+                <label>
+                  <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
+                    Ảnh mẫu nhà {editingId && "(Để trống nếu giữ ảnh cũ)"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="admin-input"
+                    required={!editingId}
+                  />
+                  {previewUrl && (
+                    <div style={{ marginTop: "12px" }}>
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        style={{
+                          maxWidth: "300px",
+                          maxHeight: "200px",
+                          borderRadius: "8px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </div>
+                  )}
+                </label>
 
-              {/* StyleData */}
-              <label>
-                <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
-                  Mô tả kỹ thuật cho AI (StyleData)
-                </span>
-                <textarea
-                  value={formData.styleData}
-                  onChange={(e) =>
-                    setFormData({ ...formData, styleData: e.target.value })
-                  }
-                  className="admin-input"
-                  rows={4}
-                  placeholder="Mô tả chi tiết về phong cách, vật liệu, màu sắc để AI hiểu..."
-                  required
-                />
-              </label>
+                <label>
+                  <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
+                    Mô tả kỹ thuật cho AI (StyleData)
+                  </span>
+                  <textarea
+                    value={formData.styleData}
+                    onChange={(e) =>
+                      setFormData({ ...formData, styleData: e.target.value })
+                    }
+                    className="admin-input"
+                    rows={4}
+                    placeholder="Mô tả chi tiết về phong cách, vật liệu, màu sắc để AI hiểu..."
+                    required
+                  />
+                </label>
 
-              {/* Description */}
-              <label>
-                <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
-                  Mô tả hiển thị cho người dùng
-                </span>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  className="admin-input"
-                  rows={3}
-                  placeholder="Mô tả ngắn gọn về mẫu nhà này..."
-                />
-              </label>
+                <label>
+                  <span style={{ display: "block", marginBottom: "8px", fontWeight: 600 }}>
+                    Mô tả hiển thị cho người dùng
+                  </span>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    className="admin-input"
+                    rows={3}
+                    placeholder="Mô tả ngắn gọn về mẫu nhà này..."
+                  />
+                </label>
 
-              {/* Buttons */}
-              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-                <button
-                  type="button"
-                  className="admin-button admin-button--ghost"
-                  onClick={resetForm}
-                  disabled={loading}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="admin-button"
-                  disabled={loading}
-                >
-                  {loading ? "Đang xử lý..." : editingId ? "Cập nhật" : "Thêm mới"}
-                </button>
+                <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    className="admin-button admin-button--ghost"
+                    onClick={resetForm}
+                    disabled={loading}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="admin-button"
+                    disabled={loading}
+                  >
+                    {loading ? "Đang xử lý..." : editingId ? "Cập nhật" : "Thêm mới"}
+                  </button>
+                </div>
               </div>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       )}
 

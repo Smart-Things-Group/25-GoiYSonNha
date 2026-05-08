@@ -23,15 +23,10 @@ function AdminDashboard({
   selectedUserMeta,
   loading,
   errors,
-  onUpdateStatus,
-  onForceClear,
   onSelectAccount,
   onDeleteGeneration,
-  onNextHistoryPage,
-  onPrevHistoryPage,
   onNextAccountPage,
   onPrevAccountPage,
-  onReloadHistory,
   onReloadAccounts,
   onNextSelectedUserPage,
   onPrevSelectedUserPage,
@@ -40,12 +35,17 @@ function AdminDashboard({
   const detailRef = useRef(null);
 
   const statTiles = useMemo(() => {
+    const visibleGenerationCount = accountStats.reduce(
+      (sum, user) => sum + (user.generationCount || 0),
+      0
+    );
+
     return [
       {
         title: "Lượt generate",
         caption: "Toàn bộ hệ thống",
         value: historyMeta?.total || history.length,
-        delta: "Hiển thị 5 mục/trang",
+        delta: "Tổng số lượt AI đã tạo",
         accent: "pink",
       },
       {
@@ -56,24 +56,21 @@ function AdminDashboard({
         accent: "green",
       },
       {
-        title: "Trang hiện tại",
-        caption: "Điều hướng danh sách",
-        value: `${historyMeta?.page || 1}/${Math.max(
-          1,
-          Math.ceil((historyMeta?.total || 1) / (historyMeta?.pageSize || 5))
-        )}`,
-        delta: "Nhấn kế tiếp để xem thêm",
+        title: "Hoạt động mới",
+        caption: "Lượt generate mới nhất",
+        value: history.length,
+        delta: history.length ? "Đếm các hoạt động bên dưới" : "Chưa có hoạt động mới",
         accent: "violet",
       },
+      {
+        title: "Lượt trong bảng",
+        caption: "Tổng lượt generate",
+        value: visibleGenerationCount,
+        delta: "Cộng lượt từ các tài khoản bên dưới",
+        accent: "green",
+      },
     ];
-  }, [
-    accountMeta?.total,
-    accountStats.length,
-    history.length,
-    historyMeta?.page,
-    historyMeta?.pageSize,
-    historyMeta?.total,
-  ]);
+  }, [accountMeta?.total, accountStats, history.length, historyMeta?.total]);
 
   return (
     <section className="admin-surface" aria-label="Bảng điều khiển quản trị">
@@ -361,7 +358,7 @@ function formatDateTime(value) {
   if (!value) return "Chưa cập nhật";
   try {
     return new Date(value).toLocaleString("vi-VN", { hour12: false });
-  } catch (_error) {
+  } catch {
     return value;
   }
 }
